@@ -1,8 +1,14 @@
 package com.example.test.controller;
 
-import com.example.test.dto.tm.PurchaseAgreementTm;
-import com.example.test.model.OwnerModel;
-import com.example.test.model.TenantModel;
+import com.example.test.bo.BOFactory;
+import com.example.test.bo.custom.PurchaseAgreementBO;
+import com.example.test.dao.custom.PurchaseAgreementDAO;
+import com.example.test.dto.OwnerDTO;
+import com.example.test.dto.UnitDTO;
+import com.example.test.entity.Owner;
+import com.example.test.view.tdm.PurchaseAgreementTM;
+import com.example.test.dao.custom.impl.OwnerDAOImpl;
+import com.example.test.dao.custom.impl.TenantDAOImpl;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 
@@ -32,11 +38,11 @@ public class PurchaseAgreementDetailsController {
     private Label agreementId;
 
 
-    private PurchaseAgreementTm purchaseAgreement;
-    private final TenantModel tenantModel = new TenantModel();
-    private final OwnerModel ownerModel = new OwnerModel();
+    private PurchaseAgreementTM purchaseAgreement;
+    private PurchaseAgreementBO purchaseAgreementBO = (PurchaseAgreementBO) BOFactory.getInstance().getBO(BOFactory.BOType.PURCHASEAGREEMENT);
 
-    public void setSelectedAgreementDetails(PurchaseAgreementTm selectedAgreement) {
+
+    public void setSelectedAgreementDetails(PurchaseAgreementTM selectedAgreement) {
 
         purchaseAgreement = selectedAgreement;
 
@@ -47,11 +53,11 @@ public class PurchaseAgreementDetailsController {
         ownerId.setText(purchaseAgreement.getHomeOwnerId());
 
         try{
-            String type = tenantModel.getHouseTypeByHouseId(purchaseAgreement.getHouseId());
-            houseType.setText(type);
+            UnitDTO unitDTO = purchaseAgreementBO.getUnitDetails(purchaseAgreement.getHouseId());
+            houseType.setText(unitDTO.getHouseType());
 
-            String ownerName = ownerModel.getOwnerDetailsById(purchaseAgreement.getHomeOwnerId());
-            name.setText(ownerName);
+            OwnerDTO ownerDTO = purchaseAgreementBO.getOwnerDetails(purchaseAgreement.getHomeOwnerId());
+            name.setText(ownerDTO.getName());
         }
         catch (SQLException | ClassNotFoundException e) {
             e.printStackTrace();

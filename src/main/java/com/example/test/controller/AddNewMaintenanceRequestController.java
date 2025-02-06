@@ -1,14 +1,18 @@
 package com.example.test.controller;
 
-import com.example.test.dto.MaintenanceRequestDto;
-import com.example.test.dto.TenantDto;
-import com.example.test.dto.UnitDto;
-import com.example.test.dto.tm.MaintenanceRequestTm;
-import com.example.test.model.EmployeeModel;
-import com.example.test.model.MaintenanceRequestModel;
-import com.example.test.model.TenantModel;
-import com.example.test.model.UnitModel;
-import com.example.test.validation.UserInputValidation;
+import com.example.test.bo.BOFactory;
+import com.example.test.bo.custom.MaintenanceRequestBO;
+import com.example.test.dto.MaintenanceRequestDTO;
+import com.example.test.dto.TenantDTO;
+import com.example.test.dto.UnitDTO;
+import com.example.test.entity.Tenant;
+import com.example.test.entity.Unit;
+import com.example.test.view.tdm.MaintenanceRequestTM;
+import com.example.test.dao.custom.impl.EmployeeDAOImpl;
+import com.example.test.dao.custom.impl.MaintenanceRequestDAOImpl;
+import com.example.test.dao.custom.impl.TenantDAOImpl;
+import com.example.test.dao.custom.impl.UnitDAOImpl;
+import com.example.test.UserInputValidation;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -61,26 +65,10 @@ public class AddNewMaintenanceRequestController implements Initializable {
     @FXML
     private ComboBox<String> technicianCmb;
 
-    private final MaintenanceRequestModel maintenanceRequestModel = new MaintenanceRequestModel();
-    private final TenantModel tenantModel = new TenantModel();
-    private UnitModel unitModel;
-    private TenantDto tenant;
-    private EmployeeModel employeeModel;
-    private MaintenanceRequestTm selectedRequest;
+    private final MaintenanceRequestBO maintenanceRequestBO = (MaintenanceRequestBO) BOFactory.getInstance().getBO(BOFactory.BOType.MAINTENANCEREQUEST);
+    private TenantDTO tenant;
+    private MaintenanceRequestTM selectedRequest;
 
-    public AddNewMaintenanceRequestController() {
-
-        try{
-            employeeModel = new EmployeeModel();
-            unitModel = new UnitModel();
-        }
-        catch (SQLException | ClassNotFoundException e) {
-            e.printStackTrace();
-            System.err.println("Error while loading Add New Maintenance Request Form: " + e.getMessage());
-            notification("An error occurred while loading Add New Maintenance Request Form. Please try again or contact support.");
-        }
-
-    }
 
 
     @FXML
@@ -99,7 +87,7 @@ public class AddNewMaintenanceRequestController implements Initializable {
                 actualCost = "-";
             }
 
-            MaintenanceRequestDto maintenanceRequest = new MaintenanceRequestDto();
+            MaintenanceRequestDTO maintenanceRequest = new MaintenanceRequestDTO();
             maintenanceRequest.setMaintenanceRequestNo(selectedRequest.getMaintenanceRequestNo());
             maintenanceRequest.setDescription(desc);
             maintenanceRequest.setAssignedTechnician(assignedTechnician);
@@ -122,7 +110,7 @@ public class AddNewMaintenanceRequestController implements Initializable {
 
             String response = null;
             try {
-                response = maintenanceRequestModel.updateMaintenanceRequest(maintenanceRequest);
+                response = maintenanceRequestBO.update(maintenanceRequest);
                 notification(response);
 
             } catch (SQLException | ClassNotFoundException e) {
@@ -134,7 +122,7 @@ public class AddNewMaintenanceRequestController implements Initializable {
 
 
         else {
-            MaintenanceRequestDto maintenanceRequest = new MaintenanceRequestDto();
+            MaintenanceRequestDTO maintenanceRequest = new MaintenanceRequestDTO();
             maintenanceRequest.setMaintenanceRequestNo(requestIdLabel.getText());
             maintenanceRequest.setTenantId(tenant.getTenantId());
             maintenanceRequest.setDate(String.valueOf(LocalDate.now()));
@@ -172,7 +160,7 @@ public class AddNewMaintenanceRequestController implements Initializable {
             maintenanceRequest.setActualCost(actualCost);
 
             try {
-                String response = maintenanceRequestModel.addNewMaintenanceRequest(maintenanceRequest);
+                String response = maintenanceRequestBO.add(maintenanceRequest);
                 notification(response);
 
                 if(response.equals("Successfully Added New Maintenance Request By Tenant ID: "+maintenanceRequest.getTenantId())){
@@ -205,7 +193,7 @@ public class AddNewMaintenanceRequestController implements Initializable {
 
         if (!tenantId.isEmpty()) {
             try {
-                tenant = tenantModel.getMoreTenantDetails(tenantId);
+                tenant = maintenanceRequestBO.getTenantDetails(tenantId);
 
                 if (tenant.getName() == null) {
 
@@ -215,8 +203,8 @@ public class AddNewMaintenanceRequestController implements Initializable {
                 }
 
                 houseIdLabel.setText(tenant.getHouseId());
-                UnitDto unit = unitModel.getHouseDetailsByHouseId(tenant.getHouseId());
-                houseTypeLabel.setText(unit.getHouseType());
+                UnitDTO unitDTO = maintenanceRequestBO.getUnitDetails(tenant.getHouseId());
+                houseTypeLabel.setText(unitDTO.getHouseType());
             }
             catch (SQLException | ClassNotFoundException e) {
                 e.printStackTrace();
@@ -234,10 +222,11 @@ public class AddNewMaintenanceRequestController implements Initializable {
         getAllTechnician();
     }
 
+
     public void setNewId(){
 
         try {
-            String newId = maintenanceRequestModel.generateNewRequestId();
+            String newId = maintenanceRequestBO.generateNewId();
             requestIdLabel.setText(newId);
         } catch (SQLException | ClassNotFoundException e) {
             e.printStackTrace();
@@ -250,7 +239,7 @@ public class AddNewMaintenanceRequestController implements Initializable {
     public void getAllTechnician(){
 
         try {
-            ObservableList<String> technicians = employeeModel.getTechnicians();
+            ObservableList<String> technicians = maintenanceRequestBO.getAllTechnicians();
             technicianCmb.setItems(technicians);
             technicianCmb.getSelectionModel().selectFirst();
         } catch (SQLException | ClassNotFoundException e) {
@@ -273,7 +262,7 @@ public class AddNewMaintenanceRequestController implements Initializable {
 
     }
 
-    public void setSelectedRequestDetailsToUpdate(MaintenanceRequestTm request) {
+    public void setSelectedRequestDetailsToUpdate(MaintenanceRequestTM request) {
 
         selectedRequest = request;
 
@@ -285,11 +274,11 @@ public class AddNewMaintenanceRequestController implements Initializable {
         technicianCmb.setValue(selectedRequest.getAssignedTechnician());
 
         try {
-            TenantDto tenantDto = tenantModel.getMoreTenantDetails(selectedRequest.getTenantId());
-            houseIdLabel.setText(tenantDto.getHouseId());
+            tenant = maintenanceRequestBO.getTenantDetails(selectedRequest.getTenantId());
+            houseIdLabel.setText(tenant.getHouseId());
 
-            UnitDto unit = unitModel.getHouseDetailsByHouseId(tenantDto.getHouseId());
-            houseTypeLabel.setText(unit.getHouseType());
+            UnitDTO unitDTO = maintenanceRequestBO.getUnitDetails(tenant.getHouseId());
+            houseTypeLabel.setText(unitDTO.getHouseType());
 
         } catch (SQLException | ClassNotFoundException e) {
             e.printStackTrace();

@@ -1,9 +1,10 @@
 package com.example.test.controller;
 
-import com.example.test.dto.SignInDto;
-import com.example.test.dto.SignInQuestionsDto;
-import com.example.test.logindata.LoginDetails;
-import com.example.test.model.SignInModel;
+import com.example.test.bo.BOFactory;
+import com.example.test.bo.custom.SignInBO;
+import com.example.test.dto.UserDTO;
+import com.example.test.dto.UserValidationDTO;
+import com.example.test.LoginDetails;
 import javafx.animation.TranslateTransition;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -21,6 +22,7 @@ import javafx.stage.StageStyle;
 import javafx.util.Duration;
 
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.Optional;
 
 public class SignInController {
@@ -44,33 +46,16 @@ public class SignInController {
     @FXML
     private Button exitbtn;
 
-    private FXMLLoader fxmlLoader;
-    private Stage stage;
-    private Scene scene;
-    private Parent root;
-    private SignInModel signInModel;
-    private SignInQuestionsDto dto;
-
-
-    public SignInController(){
-
-        try {
-            signInModel = new SignInModel();
-        }
-        catch (Exception e){
-            e.printStackTrace();
-        }
-    }
-
+    private SignInBO signInBO = (SignInBO) BOFactory.getInstance().getBO(BOFactory.BOType.SIGNIN);
 
 
     @FXML
     void signUpOnAction(ActionEvent event) throws IOException {
 
-        fxmlLoader = new FXMLLoader(getClass().getResource("/view/SignUp.fxml"));
-        root = fxmlLoader.load();
-        scene = new Scene(root);
-        stage = (Stage)((Node)event.getSource()).getScene().getWindow();
+        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/SignUp.fxml"));
+        Parent root = fxmlLoader.load();
+        Scene scene = new Scene(root);
+        Stage stage = (Stage)((Node)event.getSource()).getScene().getWindow();
 
         TranslateTransition translateTransition = new TranslateTransition(Duration.millis(1000));
         translateTransition.setFromX(0);
@@ -106,13 +91,13 @@ public class SignInController {
         else {
 
             try {
-                fxmlLoader = new FXMLLoader(getClass().getResource("/view/ForgotPasswordQuestions.fxml"));
-                root = fxmlLoader.load();
+                FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/ForgotPasswordQuestions.fxml"));
+                Parent root = fxmlLoader.load();
 
                 ForgotPasswordQuestionsController forgotPasswordQuestionsController = fxmlLoader.getController();
                 forgotPasswordQuestionsController.setUserName(uName);
-                scene = new Scene(root);
-                stage = new Stage();
+                Scene scene = new Scene(root);
+                Stage stage = new Stage();
                 stage.initStyle(StageStyle.UNDECORATED);
                 stage.setScene(scene);
                 stage.setX(70);
@@ -145,19 +130,21 @@ public class SignInController {
         }
         else{
 
-            SignInDto signInDto = new SignInDto(uName,pWord);
+            UserDTO userDTO = new UserDTO();
+            userDTO.setUserName(uName);
+            userDTO.setPassword(pWord);
 
             try {
-                String response = signInModel.signInAuthentication(signInDto);
+                String response = signInBO.signInAuthentication(userDTO);
                 if(response.equals("All Correct")){
 
                     LoginDetails loginDetails = LoginDetails.getInstance(uName,pWord);
                     System.out.println(LoginDetails.getUserName());
 
-                    fxmlLoader = new FXMLLoader(getClass().getResource("/view/Home.fxml"));
-                    root = fxmlLoader.load();
-                    scene = new Scene(root);
-                    stage = (Stage)((Node)event.getSource()).getScene().getWindow();
+                    FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/Home.fxml"));
+                    Parent root = fxmlLoader.load();
+                    Scene scene = new Scene(root);
+                    Stage stage = (Stage)((Node)event.getSource()).getScene().getWindow();
 
                     TranslateTransition translateTransition = new TranslateTransition(Duration.millis(1000));
                     translateTransition.setFromX(0);
@@ -220,10 +207,10 @@ public class SignInController {
     }
 
 
-    public void setData(SignInDto signInDto){
+    public void setData(UserDTO userDto){
 
-        userName.setText(signInDto.getUserName());
-        password.setText(signInDto.getPassword());
+        userName.setText(userDto.getUserName());
+        password.setText(userDto.getPassword());
 
     }
 

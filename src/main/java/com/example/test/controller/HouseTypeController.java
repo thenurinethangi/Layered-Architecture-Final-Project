@@ -1,10 +1,11 @@
 package com.example.test.controller;
 
-import com.example.test.dto.HouseTypeDto;
-import com.example.test.dto.tm.FloorTm;
-import com.example.test.dto.tm.HouseTypeTm;
-import com.example.test.model.HouseTypeModel;
-import com.example.test.validation.UserInputValidation;
+import com.example.test.bo.BOFactory;
+import com.example.test.bo.custom.HouseTypeBO;
+import com.example.test.dto.HouseTypeDTO;
+import com.example.test.view.tdm.HouseTypeTM;
+import com.example.test.dao.custom.impl.HouseTypeDAOImpl;
+import com.example.test.UserInputValidation;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -41,13 +42,13 @@ public class HouseTypeController implements Initializable {
     private Button addbtn;
 
     @FXML
-    private TableView<HouseTypeTm> table;
+    private TableView<HouseTypeTM> table;
 
     @FXML
-    private TableColumn<HouseTypeTm, String> houseTypeColumn;
+    private TableColumn<HouseTypeTM, String> houseTypeColumn;
 
     @FXML
-    private TableColumn<HouseTypeTm, String> descriptionColumn;
+    private TableColumn<HouseTypeTM, String> descriptionColumn;
 
     @FXML
     private ComboBox<Integer> tableRowsCmb;
@@ -73,30 +74,13 @@ public class HouseTypeController implements Initializable {
     @FXML
     private Label HouseTypeLabel;
 
-    private HouseTypeModel houseTypeModel;
-    private ObservableList<HouseTypeTm> tableData;
+    private HouseTypeBO houseTypeBO = (HouseTypeBO) BOFactory.getInstance().getBO(BOFactory.BOType.HOUSETYPE);
+    private ObservableList<HouseTypeTM> tableData;
     private ObservableList<Integer> rows;
     private ObservableList<String> sort;
     private ObservableList<String> allHouseTypes;
     private String selectHouseType;
 
-
-    public HouseTypeController(){
-
-            try {
-                houseTypeModel = new HouseTypeModel();
-            } catch (SQLException e) {
-                e.printStackTrace();
-                System.err.println("Error while loading a house type page: " + e.getMessage());
-                notification("An error occurred while loading a house type page. Please try again or contact support.");
-
-            } catch (ClassNotFoundException e) {
-                e.printStackTrace();
-                System.err.println("Error while while loading a house type page: " + e.getMessage());
-                notification("An error occurred while loading a house type page. Please try again or contact support.");
-
-            }
-    }
 
 
     @FXML
@@ -117,12 +101,12 @@ public class HouseTypeController implements Initializable {
 
             if(bool1 && bool2){
 
-                HouseTypeDto houseTypeDto = new HouseTypeDto(houseType,desc);
+                HouseTypeDTO houseTypeDto = new HouseTypeDTO(houseType,desc);
                 try {
-                    String response = houseTypeModel.addNewHouseType(houseTypeDto);
+                    String response = houseTypeBO.add(houseTypeDto);
                     notification(response);
                     clean();
-                } catch (SQLException e) {
+                } catch (SQLException | ClassNotFoundException e) {
                     e.printStackTrace();
                     System.err.println("Error while saving new House Type: " + e.getMessage());
                     notification("An error occurred while saving the new House Type. Please try again or contact support.");
@@ -152,17 +136,18 @@ public class HouseTypeController implements Initializable {
         descriptiontxt.setText("");
     }
 
+
     @FXML
     void deleteOnAction(ActionEvent event) {
 
-        HouseTypeTm selectHouseType = table.getSelectionModel().getSelectedItem();
+        HouseTypeTM selectHouseType = table.getSelectionModel().getSelectedItem();
 
         if(selectHouseType==null){
             return;
         }
 
         try {
-            boolean isUsing = houseTypeModel.isThisHouseTypeUsing(selectHouseType.getHouseType());
+            boolean isUsing = houseTypeBO.isHouseTypeUsing(selectHouseType.getHouseType());
 
             if(isUsing){
                 notification("House type: "+selectHouseType.getHouseType()+" is already in use and cannot be deleted.");
@@ -184,11 +169,11 @@ public class HouseTypeController implements Initializable {
             if(options.isPresent() && options.get()==yesButton) {
 
                 try {
-                    String response = houseTypeModel.deleteHouseType(selectHouseType);
+                    String response = houseTypeBO.delete(new HouseTypeDTO(selectHouseType.getHouseType(),selectHouseType.getDescription()));
                     notification(response);
                     clean();
                 }
-                catch (SQLException e) {
+                catch (SQLException | ClassNotFoundException e) {
                     e.printStackTrace();
                     System.err.println("Error while deleting the house type: " + e.getMessage());
                     notification("An error occurred while deleting the house type. Please try again or contact support.");
@@ -201,18 +186,18 @@ public class HouseTypeController implements Initializable {
     @FXML
     void editOnAction(ActionEvent event) {
 
-        HouseTypeTm selectHouseType = table.getSelectionModel().getSelectedItem();
+        HouseTypeTM selectHouseType = table.getSelectionModel().getSelectedItem();
 
         if(selectHouseType==null){
             return;
         }
         else {
             try {
-                HouseTypeDto houseTypeDto = new HouseTypeDto(selectHouseType.getHouseType(),selectHouseType.getDescription());
+                HouseTypeDTO houseTypeDto = new HouseTypeDTO(selectHouseType.getHouseType(),selectHouseType.getDescription());
                 HouseTypeEditController.setData(houseTypeDto);
                 System.out.println(houseTypeDto.getHouseType());
 
-                FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/HouseTypeEdit.fxml"));
+                FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/HouseTypeEdit.fxml"));
                 Parent root = fxmlLoader.load();
                 Scene scene = new Scene(root);
                 Stage stage = new Stage();
@@ -245,14 +230,13 @@ public class HouseTypeController implements Initializable {
             return;
         }
         else{
-
-            ObservableList<HouseTypeTm> selectHouseTypeTms = FXCollections.observableArrayList();
-            for (HouseTypeTm x : tableData){
+            ObservableList<HouseTypeTM> selectHouseTypeTMS = FXCollections.observableArrayList();
+            for (HouseTypeTM x : tableData){
                 if(x.getHouseType().equals(selectHouseType)){
-                    selectHouseTypeTms.add(x);
+                    selectHouseTypeTMS.add(x);
                 }
             }
-            table.setItems(selectHouseTypeTms);
+            table.setItems(selectHouseTypeTMS);
             selectHouseType = null;
         }
     }
@@ -271,7 +255,7 @@ public class HouseTypeController implements Initializable {
 
         String text = sortCmb.getSelectionModel().getSelectedItem();
 
-        ObservableList<HouseTypeTm> HouseTypeTmsAr = tableData;
+        ObservableList<HouseTypeTM> houseTypeTmsAr = tableData;
 
         if(text==null){
             return;
@@ -279,31 +263,31 @@ public class HouseTypeController implements Initializable {
 
         if(text.equals("Retrieve by house type (ascending)")){
 
-            for(int j = 0; j < HouseTypeTmsAr.size(); j++) {
-                for (int i = 0; i < HouseTypeTmsAr.size()-1; i++) {
-                    if (HouseTypeTmsAr.get(i).getHouseType().compareTo(HouseTypeTmsAr.get(i + 1).getHouseType())>0) {
-                        HouseTypeTm temp = HouseTypeTmsAr.get(i);
-                        HouseTypeTmsAr.set(i, HouseTypeTmsAr.get(i + 1));
-                        HouseTypeTmsAr.set((i + 1), temp);
+            for(int j = 0; j < houseTypeTmsAr.size(); j++) {
+                for (int i = 0; i < houseTypeTmsAr.size()-1; i++) {
+                    if (houseTypeTmsAr.get(i).getHouseType().compareTo(houseTypeTmsAr.get(i + 1).getHouseType())>0) {
+                        HouseTypeTM temp = houseTypeTmsAr.get(i);
+                        houseTypeTmsAr.set(i, houseTypeTmsAr.get(i + 1));
+                        houseTypeTmsAr.set((i + 1), temp);
 
                     }
                 }
             }
-            table.setItems(HouseTypeTmsAr);
+            table.setItems(houseTypeTmsAr);
         }
         else if(text.equals("Retrieve by house type (descending)")){
 
-            for(int j = 0; j < HouseTypeTmsAr.size(); j++) {
-                for (int i = 0; i < HouseTypeTmsAr.size()-1; i++) {
-                    if (HouseTypeTmsAr.get(i).getHouseType().compareTo(HouseTypeTmsAr.get(i + 1).getHouseType())<0) {
-                        HouseTypeTm temp = HouseTypeTmsAr.get(i);
-                        HouseTypeTmsAr.set(i, HouseTypeTmsAr.get(i + 1));
-                        HouseTypeTmsAr.set((i + 1), temp);
+            for(int j = 0; j < houseTypeTmsAr.size(); j++) {
+                for (int i = 0; i < houseTypeTmsAr.size()-1; i++) {
+                    if (houseTypeTmsAr.get(i).getHouseType().compareTo(houseTypeTmsAr.get(i + 1).getHouseType())<0) {
+                        HouseTypeTM temp = houseTypeTmsAr.get(i);
+                        houseTypeTmsAr.set(i, houseTypeTmsAr.get(i + 1));
+                        houseTypeTmsAr.set((i + 1), temp);
 
                     }
                 }
             }
-            table.setItems(HouseTypeTmsAr);
+            table.setItems(houseTypeTmsAr);
         }
 
 
@@ -321,18 +305,18 @@ public class HouseTypeController implements Initializable {
             return;
         }
 
-        ObservableList<HouseTypeTm> houseTypeTms = FXCollections.observableArrayList();
+        ObservableList<HouseTypeTM> houseTypeTMS = FXCollections.observableArrayList();
         int count = 0;
 
-        for(HouseTypeTm x : tableData){
+        for(HouseTypeTM x : tableData){
             if(rows==count){
                 break;
             }
             count++;
-            houseTypeTms.add(x);
+            houseTypeTMS.add(x);
         }
 
-        table.setItems(houseTypeTms);
+        table.setItems(houseTypeTMS);
 
     }
 
@@ -354,10 +338,15 @@ public class HouseTypeController implements Initializable {
     public void loadTableData(){
 
         try {
-            tableData = houseTypeModel.loadTableData();
+            ObservableList<HouseTypeDTO> houseTypeDTOS = houseTypeBO.getAll();
+            ObservableList<HouseTypeTM> houseTypeTMS = FXCollections.observableArrayList();
+            for(HouseTypeDTO x : houseTypeDTOS){
+                houseTypeTMS.add(new HouseTypeTM(x.getHouseType(),x.getDescription()));
+            }
+            tableData = houseTypeTMS;
             table.setItems(tableData);
 
-        } catch (SQLException e) {
+        } catch (SQLException |ClassNotFoundException e) {
             e.printStackTrace();
             System.err.println("Error while loading table data: " + e.getMessage());
             notification("An error occurred while loading table data. Please try again or contact support.");
@@ -371,7 +360,7 @@ public class HouseTypeController implements Initializable {
 
         rows = FXCollections.observableArrayList();
         int count = 0;
-        for(HouseTypeTm x : tableData){
+        for(HouseTypeTM x : tableData){
             count++;
             rows.add(count);
         }
@@ -403,7 +392,7 @@ public class HouseTypeController implements Initializable {
         allHouseTypes = FXCollections.observableArrayList();
         allHouseTypes.add("Select");
 
-        for(HouseTypeTm x : tableData){
+        for(HouseTypeTM x : tableData){
             allHouseTypes.add(x.getHouseType());
         }
 

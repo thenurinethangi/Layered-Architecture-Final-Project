@@ -1,9 +1,10 @@
 package com.example.test.controller;
 
-import com.example.test.dto.EmployeeDto;
-import com.example.test.dto.tm.EmployeeTm;
-import com.example.test.model.AddNewEmployeeModel;
-import com.example.test.validation.UserInputValidation;
+import com.example.test.bo.BOFactory;
+import com.example.test.bo.custom.EmployeeBO;
+import com.example.test.dto.EmployeeDTO;
+import com.example.test.view.tdm.EmployeeTM;
+import com.example.test.UserInputValidation;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -58,9 +59,8 @@ public class AddNewEmployeeController implements Initializable {
     private Button editbtn;
 
 
-    private EmployeeTm selectedItem;
-
-    private final AddNewEmployeeModel addNewEmployeeModel = new AddNewEmployeeModel();
+    private EmployeeTM selectedItem;
+    private EmployeeBO employeeBO = (EmployeeBO) BOFactory.getInstance().getBO(BOFactory.BOType.EMPLOYEE);
 
 
     @FXML
@@ -85,11 +85,11 @@ public class AddNewEmployeeController implements Initializable {
 
         if(result){
 
-            EmployeeDto employeeDto = new EmployeeDto(employeeIdLabel.getText(),name,address,phoneNo,Double.parseDouble(basicSalary),
+            EmployeeDTO employeeDto = new EmployeeDTO(employeeIdLabel.getText(),name,address,phoneNo,Double.parseDouble(basicSalary),
                     Double.parseDouble(allowances),date,position);
 
             try {
-                String response = addNewEmployeeModel.addNewEmployee(employeeDto);
+                String response = employeeBO.add(employeeDto);
                 getNotification(response);
 
                 if(response.equals("successfully add new employee")){
@@ -102,11 +102,8 @@ public class AddNewEmployeeController implements Initializable {
                 System.err.println("Error while adding a new employee: " + e.getMessage());
                 getNotification("An error occurred while adding a new employee, Please try again or contact support.");
             }
-
             clean();
-
         }
-
         else{
             getNotification("Your input field data not acceptable,please enter correct data!");
         }
@@ -173,10 +170,10 @@ public class AddNewEmployeeController implements Initializable {
 
             String id = employeeIdLabel.getText();
 
-            EmployeeDto employeeDto = new EmployeeDto(id,name,address,phoneNo,Double.parseDouble(basicSalary),Double.parseDouble(allowances),date,position);
+            EmployeeDTO employeeDto = new EmployeeDTO(id,name,address,phoneNo,Double.parseDouble(basicSalary),Double.parseDouble(allowances),date,position);
 
             try {
-                String response = addNewEmployeeModel.updateEmployee(employeeDto);
+                String response = employeeBO.update(employeeDto);
                 getNotification(response);
             }
             catch (SQLException | ClassNotFoundException e) {
@@ -203,7 +200,7 @@ public class AddNewEmployeeController implements Initializable {
     public void generateNextEmployeeId(){
 
         try {
-            String id = addNewEmployeeModel.generateNextEmployeeId();
+            String id = employeeBO.generateNewId();
             employeeIdLabel.setText(id);
 
         } catch (SQLException | ClassNotFoundException e) {
@@ -228,7 +225,7 @@ public class AddNewEmployeeController implements Initializable {
 
     }
 
-    public void setSelectedItemData(EmployeeTm em){
+    public void setSelectedItemData(EmployeeTM em){
 
         selectedItem = em;
         employeeIdLabel.setText(selectedItem.getEmployeeId());

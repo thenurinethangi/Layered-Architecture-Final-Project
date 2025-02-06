@@ -1,8 +1,10 @@
 package com.example.test.controller;
 
-import com.example.test.dto.tm.CustomerTm;
-import com.example.test.model.CustomerModel;
-import com.example.test.validation.UserInputValidation;
+import com.example.test.bo.BOFactory;
+import com.example.test.bo.custom.CustomerBO;
+import com.example.test.dto.CustomerDTO;
+import com.example.test.view.tdm.CustomerTM;
+import com.example.test.UserInputValidation;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -34,28 +36,28 @@ public class CustomerController implements Initializable {
     private Button editbtn;
 
     @FXML
-    private TableView<CustomerTm> table;
+    private TableView<CustomerTM> table;
 
     @FXML
-    private TableColumn<CustomerTm, String> clientIdColumn;
+    private TableColumn<CustomerTM, String> clientIdColumn;
 
     @FXML
-    private TableColumn<CustomerTm, String> nameColumn;
+    private TableColumn<CustomerTM, String> nameColumn;
 
     @FXML
-    private TableColumn<CustomerTm, String> nicColumn;
+    private TableColumn<CustomerTM, String> nicColumn;
 
     @FXML
-    private TableColumn<CustomerTm, String> addressColumn;
+    private TableColumn<CustomerTM, String> addressColumn;
 
     @FXML
-    private TableColumn<CustomerTm, String> phoneNoColumn;
+    private TableColumn<CustomerTM, String> phoneNoColumn;
 
     @FXML
-    private TableColumn<CustomerTm, String> jobTitleColumn;
+    private TableColumn<CustomerTM, String> jobTitleColumn;
 
     @FXML
-    private TableColumn<CustomerTm, String> livingArrangementColumn;
+    private TableColumn<CustomerTM, String> livingArrangementColumn;
 
     @FXML
     private Button addNewClientbtn;
@@ -109,8 +111,8 @@ public class CustomerController implements Initializable {
     private ListView<String> nameList;
 
 
-    private ObservableList<CustomerTm> tableData;
-    private final CustomerModel customerModel = new CustomerModel();
+    private ObservableList<CustomerTM> tableData;
+    private CustomerBO customerBO = (CustomerBO) BOFactory.getInstance().getBO(BOFactory.BOType.CUSTOMER);
     private ObservableList<String> phoneNumbers = FXCollections.observableArrayList();
     private ObservableList<String> nicNumbers = FXCollections.observableArrayList();
     private ObservableList<String> customerNames = FXCollections.observableArrayList();
@@ -121,7 +123,7 @@ public class CustomerController implements Initializable {
     void addNewClientOnAction(ActionEvent event) {
 
         try {
-            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/AddNewCustomer.fxml"));
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/AddNewCustomer.fxml"));
             Parent root = fxmlLoader.load();
             Scene scene = new Scene(root);
             Stage stage = new Stage();
@@ -147,7 +149,7 @@ public class CustomerController implements Initializable {
     @FXML
     void deleteOnAction(ActionEvent event) {
 
-        CustomerTm selectedItem = table.getSelectionModel().getSelectedItem();
+        CustomerTM selectedItem = table.getSelectionModel().getSelectedItem();
 
         if(selectedItem==null){
             return;
@@ -164,7 +166,10 @@ public class CustomerController implements Initializable {
             if (options.isPresent() && options.get() == yesButton) {
 
                 try {
-                    String response = customerModel.deleteCustomer(selectedItem);
+                    CustomerDTO customerDto = new CustomerDTO();
+                    customerDto.setCustomerId(selectedItem.getCustomerId());
+
+                    String response = customerBO.delete(customerDto);
                     loadTable();
                     notification(response);
                 }
@@ -186,7 +191,7 @@ public class CustomerController implements Initializable {
     @FXML
     void editOnAction(ActionEvent event) {
 
-        CustomerTm selectedItem = table.getSelectionModel().getSelectedItem();
+        CustomerTM selectedItem = table.getSelectionModel().getSelectedItem();
 
         if(selectedItem==null){
             return;
@@ -195,7 +200,7 @@ public class CustomerController implements Initializable {
         else{
 
             try {
-                FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/AddNewCustomer.fxml"));
+                FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/AddNewCustomer.fxml"));
                 Parent root = fxmlLoader.load();
                 AddNewCustomerController addNewCustomerController = fxmlLoader.getController();
                 addNewCustomerController.selectedCustomerData(selectedItem);
@@ -238,7 +243,7 @@ public class CustomerController implements Initializable {
 
 
         try {
-            customerNames = customerModel.getNameSuggestions(input);
+            customerNames = customerBO.getNameSuggestions(input);
             nameList.setItems(customerNames);
         }
         catch (SQLException | ClassNotFoundException e) {
@@ -271,7 +276,7 @@ public class CustomerController implements Initializable {
 
 
         try {
-            nicNumbers = customerModel.getNicSuggestions(input);
+            nicNumbers = customerBO.getNicSuggestions(input);
             nicList.setItems(nicNumbers);
         }
         catch (SQLException | ClassNotFoundException e) {
@@ -302,9 +307,8 @@ public class CustomerController implements Initializable {
 
         String input = phoneNoTxt.getText();
 
-
         try {
-            phoneNumbers = customerModel.getPhoneNoSuggestions(input);
+            phoneNumbers = customerBO.getPhoneNoSuggestions(input);
             phoneNoList.setItems(phoneNumbers);
         }
         catch (SQLException | ClassNotFoundException e) {
@@ -332,7 +336,7 @@ public class CustomerController implements Initializable {
     @FXML
     void searchOnAction(ActionEvent event) {
 
-        ObservableList<CustomerTm> searchedCustomers = FXCollections.observableArrayList();
+        ObservableList<CustomerTM> searchedCustomers = FXCollections.observableArrayList();
 
         String selectedCustomerId = customerIdCmb.getValue();
         String selectedName = nameTxt.getText();
@@ -345,7 +349,7 @@ public class CustomerController implements Initializable {
         boolean livingArrangementSelected = selectedLivingArrangement != null && !selectedLivingArrangement.equals("Select");
 
         if (customerIdSelected) {
-            ObservableList<CustomerTm> customersById = getCustomerById(selectedCustomerId);
+            ObservableList<CustomerTM> customersById = getCustomerById(selectedCustomerId);
 
             if (customersById.isEmpty()) {
                 table.setItems(customersById);
@@ -353,19 +357,19 @@ public class CustomerController implements Initializable {
                 searchedCustomers.addAll(customersById);
 
                 if (nameSelected) {
-                    ObservableList<CustomerTm> filteredByName = filterCustomersByName(searchedCustomers, selectedName);
+                    ObservableList<CustomerTM> filteredByName = filterCustomersByName(searchedCustomers, selectedName);
                     searchedCustomers.clear();
                     searchedCustomers.addAll(filteredByName);
                 }
 
                 if (nicSelected) {
-                    ObservableList<CustomerTm> filteredByNic = filterCustomersByNic(searchedCustomers, selectedNic);
+                    ObservableList<CustomerTM> filteredByNic = filterCustomersByNic(searchedCustomers, selectedNic);
                     searchedCustomers.clear();
                     searchedCustomers.addAll(filteredByNic);
                 }
 
                 if (livingArrangementSelected) {
-                    ObservableList<CustomerTm> filteredByLivingArrangement = filterCustomersByLivingArrangement(searchedCustomers, selectedLivingArrangement);
+                    ObservableList<CustomerTM> filteredByLivingArrangement = filterCustomersByLivingArrangement(searchedCustomers, selectedLivingArrangement);
                     searchedCustomers.clear();
                     searchedCustomers.addAll(filteredByLivingArrangement);
                 }
@@ -374,7 +378,7 @@ public class CustomerController implements Initializable {
             }
 
         } else if (nameSelected || nicSelected || livingArrangementSelected) {
-            ObservableList<CustomerTm> allCustomers = tableData;
+            ObservableList<CustomerTM> allCustomers = tableData;
             searchedCustomers.addAll(allCustomers);
 
             if (nameSelected) {
@@ -392,34 +396,34 @@ public class CustomerController implements Initializable {
             table.setItems(searchedCustomers);
 
         } else {
-            ObservableList<CustomerTm> allCustomers = tableData;
+            ObservableList<CustomerTM> allCustomers = tableData;
             table.setItems(allCustomers);
         }
     }
 
 
-    private ObservableList<CustomerTm> getCustomerById(String customerId) {
+    private ObservableList<CustomerTM> getCustomerById(String customerId) {
 
         return FXCollections.observableArrayList(
                 tableData.stream().filter(customer -> customer.getCustomerId().equalsIgnoreCase(customerId)).toList());
     }
 
 
-    private ObservableList<CustomerTm> filterCustomersByName(ObservableList<CustomerTm> customers, String name) {
+    private ObservableList<CustomerTM> filterCustomersByName(ObservableList<CustomerTM> customers, String name) {
 
         return FXCollections.observableArrayList(
                 customers.stream().filter(customer -> customer.getName().toLowerCase().contains(name.toLowerCase())).toList());
     }
 
 
-    private ObservableList<CustomerTm> filterCustomersByNic(ObservableList<CustomerTm> customers, String nic) {
+    private ObservableList<CustomerTM> filterCustomersByNic(ObservableList<CustomerTM> customers, String nic) {
 
         return FXCollections.observableArrayList(
                 customers.stream().filter(customer -> customer.getNic().equalsIgnoreCase(nic)).toList());
     }
 
 
-    private ObservableList<CustomerTm> filterCustomersByLivingArrangement(ObservableList<CustomerTm> customers, String livingArrangement) {
+    private ObservableList<CustomerTM> filterCustomersByLivingArrangement(ObservableList<CustomerTM> customers, String livingArrangement) {
 
         return FXCollections.observableArrayList(
                 customers.stream().filter(customer -> customer.getLivingArrangement().equalsIgnoreCase(livingArrangement)).toList());
@@ -446,14 +450,14 @@ public class CustomerController implements Initializable {
 
         else{
             try {
-                ObservableList<CustomerTm> customersSearchByPhoneNo = customerModel.searchCustomerAlreadyExistOrNot(phoneNo);
+                CustomerDTO customerDto = customerBO.isExistByPhoneNo(phoneNo);
 
-                if(customersSearchByPhoneNo.isEmpty()){
+                if(customerDto==null){
 
                     notification("No registered customer in this phone number, Please Add to the system as a new customer");
 
                     try {
-                        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/AddNewCustomer.fxml"));
+                        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/AddNewCustomer.fxml"));
                         Parent root = fxmlLoader.load();
                         Scene scene = new Scene(root);
                         Stage stage = new Stage();
@@ -470,7 +474,9 @@ public class CustomerController implements Initializable {
                 else{
                     notification("Registered phone no");
 
-                    table.setItems(customersSearchByPhoneNo);
+                    ObservableList<CustomerTM> customerTMS = FXCollections.observableArrayList();
+                    customerTMS.add(new CustomerTM().toTM(customerDto));
+                    table.setItems(customerTMS);
                 }
 
             }
@@ -490,7 +496,7 @@ public class CustomerController implements Initializable {
     void sortByCmbOnAction(ActionEvent event) {
 
         String sortType = sortByCmb.getSelectionModel().getSelectedItem();
-        ObservableList<CustomerTm> customerTms = tableData;
+        ObservableList<CustomerTM> customerTMS = tableData;
 
         if(sortType==null){
             return;
@@ -498,122 +504,122 @@ public class CustomerController implements Initializable {
 
         if(sortType.equals("Customer ID (Ascending)")){
 
-            for(int j = 0; j < customerTms.size(); j++) {
-                for (int i = 0; i < customerTms.size()-1; i++) {
-                    if (customerTms.get(i).getCustomerId().compareTo(customerTms.get(i + 1).getCustomerId())>0) {
-                        CustomerTm temp = customerTms.get(i);
-                        customerTms.set(i, customerTms.get(i + 1));
-                        customerTms.set((i + 1), temp);
+            for(int j = 0; j < customerTMS.size(); j++) {
+                for (int i = 0; i < customerTMS.size()-1; i++) {
+                    if (customerTMS.get(i).getCustomerId().compareTo(customerTMS.get(i + 1).getCustomerId())>0) {
+                        CustomerTM temp = customerTMS.get(i);
+                        customerTMS.set(i, customerTMS.get(i + 1));
+                        customerTMS.set((i + 1), temp);
 
                     }
                 }
             }
-            table.setItems(customerTms);
+            table.setItems(customerTMS);
         }
 
         else if(sortType.equals("Customer ID (Descending)")){
 
-            for(int j = 0; j < customerTms.size(); j++) {
-                for (int i = 0; i < customerTms.size()-1; i++) {
-                    if (customerTms.get(i).getCustomerId().compareTo(customerTms.get(i + 1).getCustomerId())<0) {
-                        CustomerTm temp = customerTms.get(i);
-                        customerTms.set(i, customerTms.get(i + 1));
-                        customerTms.set((i + 1), temp);
+            for(int j = 0; j < customerTMS.size(); j++) {
+                for (int i = 0; i < customerTMS.size()-1; i++) {
+                    if (customerTMS.get(i).getCustomerId().compareTo(customerTMS.get(i + 1).getCustomerId())<0) {
+                        CustomerTM temp = customerTMS.get(i);
+                        customerTMS.set(i, customerTMS.get(i + 1));
+                        customerTMS.set((i + 1), temp);
 
                     }
                 }
             }
-            table.setItems(customerTms);
+            table.setItems(customerTMS);
         }
 
         else if(sortType.equals("Customer Name (Ascending)")){
 
-            for(int j = 0; j < customerTms.size(); j++) {
-                for (int i = 0; i < customerTms.size()-1; i++) {
-                    if (customerTms.get(i).getName().compareTo(customerTms.get(i + 1).getName())>0) {
-                        CustomerTm temp = customerTms.get(i);
-                        customerTms.set(i, customerTms.get(i + 1));
-                        customerTms.set((i + 1), temp);
+            for(int j = 0; j < customerTMS.size(); j++) {
+                for (int i = 0; i < customerTMS.size()-1; i++) {
+                    if (customerTMS.get(i).getName().compareTo(customerTMS.get(i + 1).getName())>0) {
+                        CustomerTM temp = customerTMS.get(i);
+                        customerTMS.set(i, customerTMS.get(i + 1));
+                        customerTMS.set((i + 1), temp);
 
                     }
                 }
             }
-            table.setItems(customerTms);
+            table.setItems(customerTMS);
         }
 
         else if(sortType.equals("Customer Name (Descending)")){
 
-            for(int j = 0; j < customerTms.size(); j++) {
-                for (int i = 0; i < customerTms.size()-1; i++) {
-                    if (customerTms.get(i).getName().compareTo(customerTms.get(i + 1).getName())<0) {
-                        CustomerTm temp = customerTms.get(i);
-                        customerTms.set(i, customerTms.get(i + 1));
-                        customerTms.set((i + 1), temp);
+            for(int j = 0; j < customerTMS.size(); j++) {
+                for (int i = 0; i < customerTMS.size()-1; i++) {
+                    if (customerTMS.get(i).getName().compareTo(customerTMS.get(i + 1).getName())<0) {
+                        CustomerTM temp = customerTMS.get(i);
+                        customerTMS.set(i, customerTMS.get(i + 1));
+                        customerTMS.set((i + 1), temp);
 
                     }
                 }
             }
-            table.setItems(customerTms);
+            table.setItems(customerTMS);
         }
 
         else if(sortType.equals("NIC (Ascending)")){
 
-            for(int j = 0; j < customerTms.size(); j++) {
-                for (int i = 0; i < customerTms.size()-1; i++) {
-                    if (customerTms.get(i).getNic().compareTo(customerTms.get(i + 1).getNic())>0) {
-                        CustomerTm temp = customerTms.get(i);
-                        customerTms.set(i, customerTms.get(i + 1));
-                        customerTms.set((i + 1), temp);
+            for(int j = 0; j < customerTMS.size(); j++) {
+                for (int i = 0; i < customerTMS.size()-1; i++) {
+                    if (customerTMS.get(i).getNic().compareTo(customerTMS.get(i + 1).getNic())>0) {
+                        CustomerTM temp = customerTMS.get(i);
+                        customerTMS.set(i, customerTMS.get(i + 1));
+                        customerTMS.set((i + 1), temp);
 
                     }
                 }
             }
-            table.setItems(customerTms);
+            table.setItems(customerTMS);
         }
 
         else if(sortType.equals("NIC (Descending)")){
 
-            for(int j = 0; j < customerTms.size(); j++) {
-                for (int i = 0; i < customerTms.size()-1; i++) {
-                    if (customerTms.get(i).getNic().compareTo(customerTms.get(i + 1).getNic())<0) {
-                        CustomerTm temp = customerTms.get(i);
-                        customerTms.set(i, customerTms.get(i + 1));
-                        customerTms.set((i + 1), temp);
+            for(int j = 0; j < customerTMS.size(); j++) {
+                for (int i = 0; i < customerTMS.size()-1; i++) {
+                    if (customerTMS.get(i).getNic().compareTo(customerTMS.get(i + 1).getNic())<0) {
+                        CustomerTM temp = customerTMS.get(i);
+                        customerTMS.set(i, customerTMS.get(i + 1));
+                        customerTMS.set((i + 1), temp);
 
                     }
                 }
             }
-            table.setItems(customerTms);
+            table.setItems(customerTMS);
         }
 
         else if(sortType.equals("Living Arrangement (Ascending)")){
 
-            for(int j = 0; j < customerTms.size(); j++) {
-                for (int i = 0; i < customerTms.size()-1; i++) {
-                    if (customerTms.get(i).getLivingArrangement().compareTo(customerTms.get(i + 1).getLivingArrangement())>0) {
-                        CustomerTm temp = customerTms.get(i);
-                        customerTms.set(i, customerTms.get(i + 1));
-                        customerTms.set((i + 1), temp);
+            for(int j = 0; j < customerTMS.size(); j++) {
+                for (int i = 0; i < customerTMS.size()-1; i++) {
+                    if (customerTMS.get(i).getLivingArrangement().compareTo(customerTMS.get(i + 1).getLivingArrangement())>0) {
+                        CustomerTM temp = customerTMS.get(i);
+                        customerTMS.set(i, customerTMS.get(i + 1));
+                        customerTMS.set((i + 1), temp);
 
                     }
                 }
             }
-            table.setItems(customerTms);
+            table.setItems(customerTMS);
         }
 
         else if(sortType.equals("Living Arrangement (Descending)")){
 
-            for(int j = 0; j < customerTms.size(); j++) {
-                for (int i = 0; i < customerTms.size()-1; i++) {
-                    if (customerTms.get(i).getLivingArrangement().compareTo(customerTms.get(i + 1).getLivingArrangement())<0) {
-                        CustomerTm temp = customerTms.get(i);
-                        customerTms.set(i, customerTms.get(i + 1));
-                        customerTms.set((i + 1), temp);
+            for(int j = 0; j < customerTMS.size(); j++) {
+                for (int i = 0; i < customerTMS.size()-1; i++) {
+                    if (customerTMS.get(i).getLivingArrangement().compareTo(customerTMS.get(i + 1).getLivingArrangement())<0) {
+                        CustomerTM temp = customerTMS.get(i);
+                        customerTMS.set(i, customerTMS.get(i + 1));
+                        customerTMS.set((i + 1), temp);
 
                     }
                 }
             }
-            table.setItems(customerTms);
+            table.setItems(customerTMS);
         }
 
     }
@@ -633,13 +639,13 @@ public class CustomerController implements Initializable {
             return;
         }
 
-        ObservableList<CustomerTm> customerTms = FXCollections.observableArrayList();
+        ObservableList<CustomerTM> customerTMS = FXCollections.observableArrayList();
 
         for (int i=0; i<value; i++){
-            customerTms.add(tableData.get(i));
+            customerTMS.add(tableData.get(i));
         }
 
-        table.setItems(customerTms);
+        table.setItems(customerTMS);
 
     }
 
@@ -661,7 +667,7 @@ public class CustomerController implements Initializable {
 
     public void tableSearch() {
 
-        FilteredList<CustomerTm> filteredData = new FilteredList<>(tableData, b -> true);
+        FilteredList<CustomerTM> filteredData = new FilteredList<>(tableData, b -> true);
 
         searchTxt.textProperty().addListener((observable, oldValue, newValue) -> {
             filteredData.setPredicate(customer -> {
@@ -690,7 +696,7 @@ public class CustomerController implements Initializable {
             });
         });
 
-        SortedList<CustomerTm> sortedData = new SortedList<>(filteredData);
+        SortedList<CustomerTM> sortedData = new SortedList<>(filteredData);
 
         sortedData.comparatorProperty().bind(table.comparatorProperty());
 
@@ -714,8 +720,13 @@ public class CustomerController implements Initializable {
 
     public void loadTable(){
 
+        tableData = FXCollections.observableArrayList();
+
         try {
-            tableData = customerModel.getAllCustomers();
+            ObservableList<CustomerDTO> customerDTOS = customerBO.getAll();
+            for(CustomerDTO x : customerDTOS){
+                tableData.add(new CustomerTM().toTM(x));
+            }
             table.setItems(tableData);
         } catch (SQLException | ClassNotFoundException e) {
             e.printStackTrace();
@@ -729,7 +740,7 @@ public class CustomerController implements Initializable {
     public void setCustomerIdCmbValues(){
 
         try {
-            ObservableList<String> customerIds = customerModel.getAllCustomersId();
+            ObservableList<String> customerIds = customerBO.getAllIds();
             customerIdCmb.setItems(customerIds);
             customerIdCmb.getSelectionModel().selectFirst();
 
@@ -756,7 +767,7 @@ public class CustomerController implements Initializable {
         ObservableList<Integer> rows = FXCollections.observableArrayList();
         int count = 0;
 
-        for (CustomerTm x : tableData){
+        for (CustomerTM x : tableData){
             count++;
             rows.add(count);
 

@@ -1,18 +1,17 @@
 package com.example.test.controller;
 
-import com.example.test.dto.CustomerDto;
-import com.example.test.dto.RequestDto;
-import com.example.test.dto.tm.CustomerTm;
-import com.example.test.dto.tm.HouseTypeTm;
-import com.example.test.dto.tm.RequestTm;
-import com.example.test.model.EditRentRequestModel;
-import com.example.test.model.HouseTypeModel;
-import com.example.test.validation.UserInputValidation;
+import com.example.test.bo.BOFactory;
+import com.example.test.bo.custom.RequestBO;
+import com.example.test.dto.RequestDTO;
+import com.example.test.entity.HouseType;
+import com.example.test.entity.Request;
+import com.example.test.view.tdm.RequestTM;
+import com.example.test.dao.custom.impl.HouseTypeDAOImpl;
+import com.example.test.UserInputValidation;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.fxml.Initializable;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
@@ -20,9 +19,7 @@ import javafx.stage.Stage;
 import javafx.util.Duration;
 import org.controlsfx.control.Notifications;
 
-import java.net.URL;
 import java.sql.SQLException;
-import java.util.ResourceBundle;
 
 public class EditRentRequestController {
 
@@ -104,20 +101,10 @@ public class EditRentRequestController {
     @FXML
     private Button cancelbtn;
 
-    private final EditRentRequestModel editRentRequestModel= new EditRentRequestModel();
-    private final HouseTypeModel houseTypeModel;
+    private final RequestBO requestBO = (RequestBO) BOFactory.getInstance().getBO(BOFactory.BOType.REQUEST);
+    private final HouseTypeDAOImpl houseTypeDAOImpl = new HouseTypeDAOImpl();
 
-    {
-        try {
-            houseTypeModel = new HouseTypeModel();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private RequestDto selectedRequestToEdit;
+    private RequestDTO selectedRequestToEdit;
 
 
     @FXML
@@ -215,7 +202,7 @@ public class EditRentRequestController {
 
                 if (b1 && b2 && b3 && b4 && b5 && b6 && b7) {
 
-                    RequestDto request = new RequestDto();
+                    RequestDTO request = new RequestDTO();
 
                     request.setRequestId(requestId);
                     request.setHouseType(houseType);
@@ -238,7 +225,7 @@ public class EditRentRequestController {
 
                     String response = null;
                     try {
-                        response = editRentRequestModel.editRentRequest(request,selectedRequestToEdit);
+                        response = requestBO.editRequest(request,selectedRequestToEdit);
 
                         Notifications notifications = Notifications.create();
                         notifications.title("Notification");
@@ -263,7 +250,7 @@ public class EditRentRequestController {
 
                 if (b1 && b2 && b3 && b4 && b5 && b6) {
 
-                    RequestDto request = new RequestDto();
+                    RequestDTO request = new RequestDTO();
 
                     request.setRequestId(requestId);
                     request.setHouseType(houseType);
@@ -284,7 +271,7 @@ public class EditRentRequestController {
 
                     String response = null;
                     try {
-                        response = editRentRequestModel.editRentRequest(request,selectedRequestToEdit);
+                        response = requestBO.editRequest(request,selectedRequestToEdit);
 
                         Notifications notifications = Notifications.create();
                         notifications.title("Notification");
@@ -366,7 +353,7 @@ public class EditRentRequestController {
 
                 if (b1 && b2 && b3 && b4 && b5 && b7) {
 
-                    RequestDto request = new RequestDto();
+                    RequestDTO request = new RequestDTO();
 
                     request.setRequestId(requestId);
                     request.setHouseType(houseType);
@@ -388,7 +375,7 @@ public class EditRentRequestController {
 
                     String response = null;
                     try {
-                        response = editRentRequestModel.editRentRequest(request,selectedRequestToEdit);
+                        response = requestBO.editRequest(request,selectedRequestToEdit);
 
                         Notifications notifications = Notifications.create();
                         notifications.title("Notification");
@@ -413,7 +400,7 @@ public class EditRentRequestController {
 
                 if (b1 && b2 && b3 && b4 && b5) {
 
-                    RequestDto request = new RequestDto();
+                    RequestDTO request = new RequestDTO();
 
                     request.setRequestId(requestId);
                     request.setHouseType(houseType);
@@ -434,7 +421,7 @@ public class EditRentRequestController {
 
                     String response = null;
                     try {
-                        response = editRentRequestModel.editRentRequest(request,selectedRequestToEdit);
+                        response = requestBO.editRequest(request,selectedRequestToEdit);
 
                         Notifications notifications = Notifications.create();
                         notifications.title("Notification");
@@ -460,10 +447,10 @@ public class EditRentRequestController {
 
     }
 
-    public void setSelectedRequestData(RequestTm selectedRequest) {
+    public void setSelectedRequestData(RequestTM selectedRequest) {
 
         try {
-            selectedRequestToEdit = editRentRequestModel.getSelectedRequestAllDetails(selectedRequest.getRequestId());
+            selectedRequestToEdit = requestBO.search(selectedRequest.getRequestId());
 
             if(selectedRequestToEdit==null){
                return;
@@ -526,14 +513,14 @@ public class EditRentRequestController {
     public void setValuesToHouseTypeCmb() {
 
         ObservableList<String> houseTypes = FXCollections.observableArrayList();
-        ObservableList<HouseTypeTm> houseTypeTms;
+        ObservableList<HouseType> houseTypeTMS;
         try {
-            houseTypeTms = houseTypeModel.loadTableData();
-        } catch (SQLException e) {
+            houseTypeTMS = houseTypeDAOImpl.getAll();
+        } catch (SQLException |  ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
 
-        for (HouseTypeTm x : houseTypeTms) {
+        for (HouseType x : houseTypeTMS) {
 
             houseTypes.add(x.getHouseType());
         }

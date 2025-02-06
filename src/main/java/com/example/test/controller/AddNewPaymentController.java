@@ -1,16 +1,16 @@
 package com.example.test.controller;
 
 import com.example.test.SendMail;
-import com.example.test.dto.HouseStatusCheckDto;
-import com.example.test.dto.TenantDto;
-import com.example.test.model.HouseStatusCheckModel;
-import com.example.test.model.PaymentModel;
-import com.example.test.model.TenantModel;
+import com.example.test.bo.BOFactory;
+import com.example.test.bo.custom.PaymentBO;
+import com.example.test.dto.HouseInspectDTO;
+import com.example.test.dto.PaymentDTO;
+import com.example.test.dto.TenantDTO;
+import com.example.test.dao.custom.impl.TenantDAOImpl;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
@@ -21,12 +21,7 @@ import javafx.util.Duration;
 import org.controlsfx.control.Notifications;
 
 import java.sql.SQLException;
-import java.time.LocalDate;
 import java.time.Month;
-import java.time.YearMonth;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
-import java.util.Locale;
 
 public class AddNewPaymentController {
 
@@ -70,11 +65,9 @@ public class AddNewPaymentController {
     private ListView<String> houseStatusCheckNoList;
 
 
-    private final PaymentModel paymentModel = new PaymentModel();
-    private final TenantModel tenantModel = new TenantModel();
-    private final HouseStatusCheckModel houseStatusCheckModel = new HouseStatusCheckModel();
-    private TenantDto tenant;
-    private HouseStatusCheckDto houseStatusCheck;
+    private final PaymentBO paymentBO = (PaymentBO) BOFactory.getInstance().getBO(BOFactory.BOType.PAYMENT);
+    private TenantDTO tenant;
+    private HouseInspectDTO houseStatusCheck;
     private ObservableList<String> checkNos;
 
 
@@ -92,7 +85,7 @@ public class AddNewPaymentController {
         String input = houseStatusCheckNoTxt.getText();
 
         try {
-            checkNos = houseStatusCheckModel.getHouseCheckNumbersSuggestions(input);
+            checkNos = paymentBO.getHouseCheckNumbersSuggestions(input);
             houseStatusCheckNoList.setItems(checkNos);
         }
         catch (SQLException | ClassNotFoundException e) {
@@ -115,10 +108,16 @@ public class AddNewPaymentController {
         }
         String email = "0";
         String response = "0";
+        TenantDTO tenant1 = null;
 
         try {
-            response = paymentModel.addNewPropertyDamagePayment(houseStatusCheck);
-            email = tenantModel.getTenantEmailById(houseStatusCheck.getTenantId());
+            PaymentDTO paymentDTO = new PaymentDTO();
+            paymentDTO.setTenantId(houseStatusCheck.getTenantId());
+            paymentDTO.setPaymentType("Property Damage Charges");
+            paymentDTO.setAmount(Double.parseDouble(houseStatusCheck.getEstimatedCostForRepair()));
+
+            response = paymentBO.addNewPropertyDamagePayment(paymentDTO,houseStatusCheck);
+            tenant1 = paymentBO.getTenantDetailsUsingId(houseStatusCheck.getTenantId());
 
             notification(response);
             clean();
@@ -132,7 +131,7 @@ public class AddNewPaymentController {
         notification("Sent Email To Tenant ID: "+houseStatusCheck.getTenantId()+" , regarding property damage payment complete");
 
         SendMail sendMail = new SendMail();
-        String finalEmail = email;
+        String finalEmail = tenant1.getEmail();
         new Thread(() -> sendMail.sendMail(finalEmail,"Regarding receiving property damage repair costs","We would like to inform you that your payment for property damage has been successfully received.\nThank you for your prompt action.\n\n\nThe Grand View Residences\nColombo 08")).start();
     }
 
@@ -143,7 +142,7 @@ public class AddNewPaymentController {
         String houseInspectionNumber = houseStatusCheckNoTxt.getText();
 
         try {
-            houseStatusCheck = houseStatusCheckModel.getHouseInspectionDetailsById(houseInspectionNumber);
+            houseStatusCheck = paymentBO.getHouseInspectionDetails(houseInspectionNumber);
             tenantIdLabel.setText(houseStatusCheck.getTenantId());
             dateLabel.setText(houseStatusCheck.getDate());
             damagedHouseIdLabel.setText(houseStatusCheck.getHouseId());
@@ -165,7 +164,12 @@ public class AddNewPaymentController {
 
         String response = "0";
         try {
-           response =  paymentModel.addNewMonthlyPayment(tenant);
+            PaymentDTO paymentDTO = new PaymentDTO();
+            paymentDTO.setTenantId(tenant.getTenantId());
+            paymentDTO.setAmount(tenant.getMonthlyRent());
+            paymentDTO.setPaymentType("Monthly Rent Payment");
+
+            response =  paymentBO.addNewMonthlyPayment(paymentDTO,tenant);
 
             notification(response);
             clean();
@@ -194,7 +198,7 @@ public class AddNewPaymentController {
 
         if(tenantDetail.length()==10){
             try {
-                tenant = tenantModel.checkTenantPhoneNo(tenantDetail);
+                tenant = paymentBO.getTenantDetailsUsingPhoneNo(tenantDetail);
             }
             catch (SQLException | ClassNotFoundException e) {
                 e.printStackTrace();
@@ -205,7 +209,7 @@ public class AddNewPaymentController {
         }
         else if(tenantDetail.length()==5){
             try {
-                tenant = tenantModel.getMoreTenantDetails(tenantDetail);
+                tenant = paymentBO.getTenantDetailsUsingId(tenantDetail);
             }
             catch (SQLException | ClassNotFoundException e) {
                 e.printStackTrace();

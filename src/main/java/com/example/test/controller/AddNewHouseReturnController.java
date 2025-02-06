@@ -1,10 +1,15 @@
 package com.example.test.controller;
 
-import com.example.test.dto.HouseReturnDto;
-import com.example.test.dto.HouseStatusCheckDto;
-import com.example.test.dto.TenantDto;
-import com.example.test.dto.UnitDto;
-import com.example.test.model.*;
+import com.example.test.bo.BOFactory;
+import com.example.test.bo.custom.HouseReturnBO;
+import com.example.test.dao.custom.impl.*;
+import com.example.test.dto.HouseInspectDTO;
+import com.example.test.dto.HouseReturnDTO;
+import com.example.test.dto.TenantDTO;
+import com.example.test.dto.UnitDTO;
+import com.example.test.entity.HouseInspect;
+import com.example.test.entity.Tenant;
+import com.example.test.entity.Unit;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
@@ -53,40 +58,23 @@ public class AddNewHouseReturnController {
     @FXML
     private Label lastPaidMonthLabel;
 
-    private final AddNewHouseReturnModel addNewHouseReturnModel = new AddNewHouseReturnModel();
-    private final TenantModel tenantModel = new TenantModel();
-    private UnitModel unitModel;
-    private final HouseStatusCheckModel houseStatusCheckModel = new HouseStatusCheckModel();
-    private final ReturnHouseModel returnHouseModel = new ReturnHouseModel();
-    private final LeaseAgreementModel leaseAgreementModel = new LeaseAgreementModel();
-    private HouseReturnDto houseReturnDto;
-    private TenantDto tenantDetails;
-
-
-    public AddNewHouseReturnController() {
-
-        try{
-            unitModel = new UnitModel();
-        }
-        catch (SQLException | ClassNotFoundException e) {
-            e.printStackTrace();
-            System.err.println("Error while loading the Add New House Return form: " + e.getMessage());
-            notification("An error occurred while loading the Add New House Return form. Please try again or contact support.");
-        }
-    }
+    private final HouseReturnBO houseReturnBO = (HouseReturnBO) BOFactory.getInstance().getBO(BOFactory.BOType.HOUSERETURN);
+    private HouseReturnDTO houseReturnDto;
+    private TenantDTO tenantDetails;
+    private String leaseAgreementId;
 
 
     @FXML
     void reclaimOnAction(ActionEvent event) {
 
-        houseReturnDto.setReasonToLeave(reasonToLeaveTxt.getText());
+        houseReturnDto.setReason(reasonToLeaveTxt.getText());
 
-        if(houseReturnDto.getTenantId()==null || houseReturnDto.getReasonToLeave()==null){
+        if(houseReturnDto.getTenantId()==null || houseReturnDto.getReason()==null){
             return;
         }
 
         try {
-            String response = returnHouseModel.reclaimHouse(houseReturnDto);
+            String response = houseReturnBO.reclaimHouse(houseReturnDto,leaseAgreementId);
             notification(response);
 
             if(response.equals("Successfully Reclaiming The House!")){
@@ -106,14 +94,14 @@ public class AddNewHouseReturnController {
     @FXML
     void refundAndReclaimOnAction(ActionEvent event) {
 
-        houseReturnDto.setReasonToLeave(reasonToLeaveTxt.getText());
+        houseReturnDto.setReason(reasonToLeaveTxt.getText());
 
-        if(houseReturnDto.getTenantId()==null || houseReturnDto.getReasonToLeave()==null){
+        if(houseReturnDto.getTenantId()==null || houseReturnDto.getReason()==null){
             return;
         }
 
         try {
-            String response = returnHouseModel.reclaimHouseWithRefundSecurityDeposit(houseReturnDto,tenantDetails);
+            String response = houseReturnBO.reclaimHouseWithRefundSecurityDeposit(houseReturnDto,leaseAgreementId);
             notification(response);
 
             if(response.equals("Successfully Refund The Security Payment And Reclaiming The House!")){
@@ -136,47 +124,47 @@ public class AddNewHouseReturnController {
 
         if(!tenantId.isEmpty()){
             try {
-                TenantDto tenant = tenantModel.getMoreTenantDetails(tenantId);
+                TenantDTO tenantDTO = houseReturnBO.getTenantDetails(tenantId);
 
-                if(tenant.getName()==null){
+                if(tenantDTO.getName()==null){
 
                     clean();
                     notification("Please Enter Correct Tenant ID");
                     return;
                 }
 
-                tenantDetails = tenantModel.getMoreTenantDetails(tenant.getTenantId());
+                tenantDetails = houseReturnBO.getTenantDetails(tenantDTO.getTenantId());
 
-                tenantNameLabel.setText(tenant.getName());
-                houseIdLabel.setText(tenant.getHouseId());
-                remainingSecurityFundLabel.setText(String.valueOf(tenant.getSecurityPaymentRemain()));
-                lastPaidMonthLabel.setText(tenant.getLastPaidMonth());
+                tenantNameLabel.setText(tenantDTO.getName());
+                houseIdLabel.setText(tenantDTO.getHouseId());
+                remainingSecurityFundLabel.setText(String.valueOf(tenantDTO.getSecurityPaymentRemain()));
+                lastPaidMonthLabel.setText(tenantDTO.getLastPaidMonth());
 
-                UnitDto unit =  unitModel.getHouseDetailsByHouseId(tenant.getHouseId());
-                houseTypeLabel.setText(unit.getHouseType());
+                UnitDTO unitDTO =  houseReturnBO.getUnitDetails(tenantDTO.getHouseId());
+                houseTypeLabel.setText(unitDTO.getHouseType());
 
-                houseReturnDto = new HouseReturnDto();
-                houseReturnDto.setTenantId(tenant.getTenantId());
-                houseReturnDto.setHouseId(tenant.getHouseId());
+                houseReturnDto = new HouseReturnDTO();
+                houseReturnDto.setTenantId(tenantDTO.getTenantId());
+                houseReturnDto.setHouseId(tenantDTO.getHouseId());
+                houseReturnDto.setRefundedAmount(String.valueOf(tenantDTO.getSecurityPaymentRemain()));
 
-                String leaseAgreementId = leaseAgreementModel.getLeaseAgreementByTenantId(tenant.getTenantId());
-                houseReturnDto.setAgreementId(leaseAgreementId);
+                leaseAgreementId = houseReturnBO.getLeaseAgreementByTenantId(tenantDTO.getTenantId());
 
-                HouseStatusCheckDto houseStatusCheckDto = houseStatusCheckModel.getLastInspectCheckByTenant(tenant.getTenantId());
-                if(houseStatusCheckDto.getTotalHouseStatus()==null){
+                HouseInspectDTO houseInspectDto = houseReturnBO.getLatestHouseInspectOfTenant(tenantDTO.getTenantId());
+                if(houseInspectDto.getTotalHouseStatus()==null){
 
                     houseInspectDetailsLabel.setText("No Inspect For This Rented House");
                 }
 
                 else{
-                    if(houseStatusCheckDto.getIsPaymentDone().equals("N/A")){
+                    if(houseInspectDto.getIsPaymentDone().equals("N/A")){
 
-                        houseInspectDetailsLabel.setText("Total House Status: "+houseStatusCheckDto.getTotalHouseStatus() + "  ,  No Damages Noted In The Last Inspection");
+                        houseInspectDetailsLabel.setText("Total House Status: "+ houseInspectDto.getTotalHouseStatus() + "  ,  No Damages Noted In The Last Inspection");
                     }
                     else{
-                        houseInspectDetailsLabel.setText("Total House Status: "+houseStatusCheckDto.getTotalHouseStatus() + "  ,  Is Payment Done For Damages: "+ houseStatusCheckDto.getIsPaymentDone());
+                        houseInspectDetailsLabel.setText("Total House Status: "+ houseInspectDto.getTotalHouseStatus() + "  ,  Is Payment Done For Damages: "+ houseInspectDto.getIsPaymentDone());
 
-                        if(houseStatusCheckDto.getTotalHouseStatus().equals("Damaged") && houseStatusCheckDto.getIsPaymentDone().equals("Not Yet")){
+                        if(houseInspectDto.getTotalHouseStatus().equals("Damaged") && houseInspectDto.getIsPaymentDone().equals("Not Yet")){
                             messageLabel.setText("The tenant has damaged the house without compensation.\nIt is advised to seek payment and reclaim the property");
                             refundAndReclaimBtn.setDisable(true);
                         }

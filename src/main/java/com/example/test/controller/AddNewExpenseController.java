@@ -1,8 +1,10 @@
 package com.example.test.controller;
 
-import com.example.test.dto.ExpenseDto;
-import com.example.test.model.ExpenseModel;
-import com.example.test.validation.UserInputValidation;
+import com.example.test.bo.BOFactory;
+import com.example.test.bo.custom.ExpenseBO;
+import com.example.test.dto.ExpenseDTO;
+import com.example.test.dao.custom.impl.ExpenseDAOImpl;
+import com.example.test.UserInputValidation;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -52,7 +54,7 @@ public class AddNewExpenseController implements Initializable {
     private Label amountErrorLabel;
 
 
-    private final ExpenseModel expenseModel = new ExpenseModel();
+    private final ExpenseBO expenseBO = (ExpenseBO) BOFactory.getInstance().getBO(BOFactory.BOType.EXPENSE);
     private ObservableList<String> requestIds = FXCollections.observableArrayList();
 
 
@@ -87,11 +89,10 @@ public class AddNewExpenseController implements Initializable {
         }
         boolean b3 = false;
         try {
-            b3 = expenseModel.checkEnteredRequestIdValid(maintenanceRequestNo);
+            b3 = expenseBO.checkEnteredRequestIdValid(maintenanceRequestNo);
             if(!b3){
 
                 notification("Maintenance Request Number Is Not Valid.");
-
             }
 
         } catch (SQLException | ClassNotFoundException e) {
@@ -102,9 +103,9 @@ public class AddNewExpenseController implements Initializable {
 
         if(b1 && b2 && b3){
 
-            ExpenseDto newExpense = new ExpenseDto(expenseNo,description,Double.parseDouble(amount),maintenanceRequestNo,date);
+            ExpenseDTO newExpense = new ExpenseDTO(expenseNo,description,Double.parseDouble(amount),maintenanceRequestNo,date);
             try {
-                String response = expenseModel.addNewExpenseForMaintenanceRequest(newExpense);
+                String response = expenseBO.addNewExpenseForMaintenanceRequest(newExpense);
                 notification(response);
 
             } catch (SQLException | ClassNotFoundException e) {
@@ -138,7 +139,7 @@ public class AddNewExpenseController implements Initializable {
         String input = requestIdTxt.getText();
 
         try {
-            requestIds = expenseModel.getRequestIdSuggestions(input);
+            requestIds = expenseBO.getRequestIdSuggestions(input);
             requestIdList.setItems(requestIds);
         }
         catch (SQLException | ClassNotFoundException e) {
@@ -164,7 +165,7 @@ public class AddNewExpenseController implements Initializable {
     public void generateNewExpenseNo(){
 
         try {
-            String id = expenseModel.generateNewExpenseId();
+            String id = expenseBO.generateNewId();
             expenseNoLabel.setText(id);
 
         } catch (SQLException | ClassNotFoundException e) {

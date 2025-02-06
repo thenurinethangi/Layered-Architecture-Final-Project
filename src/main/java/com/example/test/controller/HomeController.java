@@ -1,6 +1,6 @@
 package com.example.test.controller;
 
-import com.example.test.logindata.LoginDetails;
+import com.example.test.LoginDetails;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -127,7 +127,7 @@ public class HomeController implements Initializable {
         try {
             pageLabel.setText("Purchase Agreement");
 
-            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/PurchaseAgreement.fxml"));
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/PurchaseAgreement.fxml"));
             AnchorPane anchorPane = fxmlLoader.load();
             mainPnae.getChildren().clear();
             mainPnae.getChildren().add(anchorPane);
@@ -146,7 +146,7 @@ public class HomeController implements Initializable {
         try {
             pageLabel.setText("Lease Agreement");
 
-            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/LeaseAgreement.fxml"));
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/LeaseAgreement.fxml"));
             AnchorPane anchorPane = fxmlLoader.load();
             mainPnae.getChildren().clear();
             mainPnae.getChildren().add(anchorPane);
@@ -166,7 +166,7 @@ public class HomeController implements Initializable {
             dashboardbtn.setFocusTraversable(true);
             pageLabel.setText("Customer");
 
-            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/Customer.fxml"));
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/Customer.fxml"));
             AnchorPane anchorPane = fxmlLoader.load();
             mainPnae.getChildren().clear();
             mainPnae.getChildren().add(anchorPane);
@@ -185,7 +185,7 @@ public class HomeController implements Initializable {
             dashboardbtn.setFocusTraversable(true);
             pageLabel.setText("Dashboard");
 
-            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/Dashboard.fxml"));
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/Dashboard.fxml"));
             AnchorPane anchorPane = fxmlLoader.load();
             mainPnae.getChildren().clear();
             mainPnae.getChildren().add(anchorPane);
@@ -226,7 +226,7 @@ public class HomeController implements Initializable {
         try {
             pageLabel.setText("Expense");
 
-            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/Expense.fxml"));
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/Expense.fxml"));
             AnchorPane anchorPane = fxmlLoader.load();
             mainPnae.getChildren().clear();
             mainPnae.getChildren().add(anchorPane);
@@ -245,7 +245,7 @@ public class HomeController implements Initializable {
         try {
             pageLabel.setText("Floor");
 
-            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/Floor.fxml"));
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/Floor.fxml"));
             AnchorPane anchorPane = fxmlLoader.load();
             FloorController floorController = fxmlLoader.getController();
             floorController.setFloorTextInvisible();
@@ -266,7 +266,7 @@ public class HomeController implements Initializable {
         try {
             pageLabel.setText("Maintenance Request");
 
-            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/MaintenanceRequest.fxml"));
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/MaintenanceRequest.fxml"));
             AnchorPane anchorPane = fxmlLoader.load();
             mainPnae.getChildren().clear();
             mainPnae.getChildren().add(anchorPane);
@@ -290,7 +290,7 @@ public class HomeController implements Initializable {
         try {
             pageLabel.setText("Home Owner");
 
-            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/Owner.fxml"));
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/Owner.fxml"));
             AnchorPane anchorPane = fxmlLoader.load();
             mainPnae.getChildren().clear();
             mainPnae.getChildren().add(anchorPane);
@@ -308,7 +308,7 @@ public class HomeController implements Initializable {
         try {
             pageLabel.setText("Payment");
 
-            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/Payment.fxml"));
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/Payment.fxml"));
             AnchorPane anchorPane = fxmlLoader.load();
             mainPnae.getChildren().clear();
             mainPnae.getChildren().add(anchorPane);
@@ -327,7 +327,7 @@ public class HomeController implements Initializable {
         try {
             pageLabel.setText("Request");
 
-            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/Request.fxml"));
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/Request.fxml"));
             AnchorPane anchorPane = fxmlLoader.load();
             mainPnae.getChildren().clear();
             mainPnae.getChildren().add(anchorPane);
@@ -346,7 +346,7 @@ public class HomeController implements Initializable {
         try {
             pageLabel.setText("Return House");
 
-            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/ReturnHouse.fxml"));
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/ReturnHouse.fxml"));
             AnchorPane anchorPane = fxmlLoader.load();
             mainPnae.getChildren().clear();
             mainPnae.getChildren().add(anchorPane);
@@ -370,7 +370,7 @@ public class HomeController implements Initializable {
         try {
             pageLabel.setText("House Inspection");
 
-            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/HouseStatusCheck.fxml"));
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/HouseStatusCheck.fxml"));
             AnchorPane anchorPane = fxmlLoader.load();
             mainPnae.getChildren().clear();
             mainPnae.getChildren().add(anchorPane);
@@ -389,7 +389,7 @@ public class HomeController implements Initializable {
         try {
             pageLabel.setText("Tenant");
 
-            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/Tenant.fxml"));
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/Tenant.fxml"));
             AnchorPane anchorPane = fxmlLoader.load();
             mainPnae.getChildren().clear();
             mainPnae.getChildren().add(anchorPane);
@@ -409,7 +409,7 @@ public class HomeController implements Initializable {
             dashboardbtn.setFocusTraversable(true);
             pageLabel.setText("Unit");
 
-            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/Unit.fxml"));
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/Unit.fxml"));
             AnchorPane anchorPane = fxmlLoader.load();
             mainPnae.getChildren().clear();
             mainPnae.getChildren().add(anchorPane);
@@ -432,7 +432,7 @@ public class HomeController implements Initializable {
         stage.close();
 
         try {
-            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/SignIn.fxml"));
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/SignIn.fxml"));
             Parent root = fxmlLoader.load();
             Scene scene = new Scene(root);
             Stage stage1 = new Stage();
@@ -463,7 +463,7 @@ public class HomeController implements Initializable {
         userNameLabel.setText(subUserName);
 
         try {
-            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/Dashboard.fxml"));
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/Dashboard.fxml"));
             AnchorPane anchorPane = fxmlLoader.load();
             mainPnae.getChildren().clear();
             mainPnae.getChildren().add(anchorPane);
@@ -497,7 +497,7 @@ public class HomeController implements Initializable {
 
                 else if(page.equals("Employee") || page.equals("employee")){
                     try {
-                        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/Employee.fxml"));
+                        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/Employee.fxml"));
                         AnchorPane anchorPane = fxmlLoader.load();
                         mainPnae.getChildren().clear();
                         mainPnae.getChildren().add(anchorPane);
@@ -539,7 +539,7 @@ public class HomeController implements Initializable {
                     try {
                         pageLabel.setText("House Type");
 
-                        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/HouseType.fxml"));
+                        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/HouseType.fxml"));
                         AnchorPane anchorPane = fxmlLoader.load();
                         HouseTypeController houseTypeController = fxmlLoader.getController();
                         houseTypeController.setHouseTypeTextInvisible();
@@ -592,7 +592,7 @@ public class HomeController implements Initializable {
     public void notificationOnMouseClicked(MouseEvent event) {
 
         try {
-            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/Notification.fxml"));
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/Notification.fxml"));
             Parent root = fxmlLoader.load();
             Scene scene = new Scene(root);
             Stage stage = new Stage();
@@ -611,7 +611,7 @@ public class HomeController implements Initializable {
     public void userOnAction(ActionEvent event) {
 
         try {
-            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/UserProfile.fxml"));
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/UserProfile.fxml"));
             Parent root = fxmlLoader.load();
             Scene scene = new Scene(root);
             Stage stage = new Stage();

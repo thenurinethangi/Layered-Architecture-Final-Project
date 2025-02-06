@@ -1,9 +1,10 @@
 package com.example.test.controller;
 
-import com.example.test.dto.tm.ExpenseTm;
-import com.example.test.dto.tm.PaymentTm;
-import com.example.test.dto.tm.TenantTm;
-import com.example.test.model.ExpenseModel;
+import com.example.test.bo.BOFactory;
+import com.example.test.bo.custom.ExpenseBO;
+import com.example.test.dto.ExpenseDTO;
+import com.example.test.view.tdm.ExpenseTM;
+import com.example.test.dao.custom.impl.ExpenseDAOImpl;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -17,7 +18,6 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.input.MouseEvent;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 import org.controlsfx.control.Notifications;
@@ -33,22 +33,22 @@ import java.util.ResourceBundle;
 public class ExpenseController implements Initializable {
 
     @FXML
-    private TableView<ExpenseTm> table;
+    private TableView<ExpenseTM> table;
 
     @FXML
-    private TableColumn<ExpenseTm, String> expenseNoColumn;
+    private TableColumn<ExpenseTM, String> expenseNoColumn;
 
     @FXML
-    private TableColumn<ExpenseTm, String> descriptionColumn;
+    private TableColumn<ExpenseTM, String> descriptionColumn;
 
     @FXML
-    private TableColumn<ExpenseTm, Double> amountColumn;
+    private TableColumn<ExpenseTM, Double> amountColumn;
 
     @FXML
-    private TableColumn<ExpenseTm, String> dateColumn;
+    private TableColumn<ExpenseTM, String> dateColumn;
 
     @FXML
-    private TableColumn<ExpenseTm, String> requestNoColumn;
+    private TableColumn<ExpenseTM, String> requestNoColumn;
 
     @FXML
     private Button addNewExpenseBtn;
@@ -78,15 +78,16 @@ public class ExpenseController implements Initializable {
     private TextField searchTxt;
 
 
-    private final ExpenseModel expenseModel = new ExpenseModel();
-    private ObservableList<ExpenseTm> tableData;
+    private final ExpenseBO expenseBO = (ExpenseBO) BOFactory.getInstance().getBO(BOFactory.BOType.EXPENSE);
+    private ObservableList<ExpenseTM> tableData;
+
 
 
     @FXML
     void addNewExpenseOnAction(ActionEvent event) {
 
         try {
-            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/AddNewExpense.fxml"));
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/AddNewExpense.fxml"));
             Parent root = fxmlLoader.load();
             Scene scene = new Scene(root);
             Stage s1 = new Stage();
@@ -104,7 +105,7 @@ public class ExpenseController implements Initializable {
     @FXML
     void deleteOnAction(ActionEvent event) {
 
-        ExpenseTm selectedExpense = table.getSelectionModel().getSelectedItem();
+        ExpenseTM selectedExpense = table.getSelectionModel().getSelectedItem();
 
         if(selectedExpense==null){
             return;
@@ -136,7 +137,7 @@ public class ExpenseController implements Initializable {
             if (result.isPresent() && result.get() == buttonYes) {
 
                 try {
-                    String response = expenseModel.deleteExpense(selectedExpense);
+                    String response = expenseBO.delete(new ExpenseDTO().toDTO(selectedExpense));
                     notification(response);
                     loadTable();
 
@@ -169,7 +170,7 @@ public class ExpenseController implements Initializable {
     @FXML
     void searchOnAction(ActionEvent event) {
 
-        ObservableList<ExpenseTm> searchedExpenses = FXCollections.observableArrayList();
+        ObservableList<ExpenseTM> searchedExpenses = FXCollections.observableArrayList();
 
         String selectedExpenseNo = expenseNoCmb.getSelectionModel().getSelectedItem();
         String selectedRequestNo = requestNoCmb.getSelectionModel().getSelectedItem();
@@ -178,7 +179,7 @@ public class ExpenseController implements Initializable {
         boolean requestNoSelected = selectedRequestNo != null && !selectedRequestNo.equals("Select");
 
         if (expenseNoSelected) {
-            ObservableList<ExpenseTm> expensesByExpenseNo = getExpenseByExpenseNo(selectedExpenseNo);
+            ObservableList<ExpenseTM> expensesByExpenseNo = getExpenseByExpenseNo(selectedExpenseNo);
 
             if (expensesByExpenseNo.isEmpty()) {
                 table.setItems(expensesByExpenseNo);
@@ -186,7 +187,7 @@ public class ExpenseController implements Initializable {
                 searchedExpenses.addAll(expensesByExpenseNo);
 
                 if (requestNoSelected) {
-                    ObservableList<ExpenseTm> filteredByRequestNo = filterExpensesByRequestNo(searchedExpenses, selectedRequestNo);
+                    ObservableList<ExpenseTM> filteredByRequestNo = filterExpensesByRequestNo(searchedExpenses, selectedRequestNo);
                     searchedExpenses.clear();
                     searchedExpenses.addAll(filteredByRequestNo);
                 }
@@ -195,21 +196,21 @@ public class ExpenseController implements Initializable {
             }
 
         } else if (requestNoSelected) {
-            ObservableList<ExpenseTm> allExpenses = tableData;
+            ObservableList<ExpenseTM> allExpenses = tableData;
             searchedExpenses.addAll(allExpenses);
 
             searchedExpenses = filterExpensesByRequestNo(searchedExpenses, selectedRequestNo);
             table.setItems(searchedExpenses);
 
         } else {
-            ObservableList<ExpenseTm> allExpenses = tableData;
+            ObservableList<ExpenseTM> allExpenses = tableData;
             table.setItems(allExpenses);
         }
     }
 
 
 
-    private ObservableList<ExpenseTm> getExpenseByExpenseNo(String expenseNo) {
+    private ObservableList<ExpenseTM> getExpenseByExpenseNo(String expenseNo) {
         return FXCollections.observableArrayList(
                 tableData.stream()
                         .filter(expense -> expense.getExpenseNo().equalsIgnoreCase(expenseNo))
@@ -218,7 +219,7 @@ public class ExpenseController implements Initializable {
     }
 
 
-    private ObservableList<ExpenseTm> filterExpensesByRequestNo(ObservableList<ExpenseTm> expenses, String requestNo) {
+    private ObservableList<ExpenseTM> filterExpensesByRequestNo(ObservableList<ExpenseTM> expenses, String requestNo) {
         return FXCollections.observableArrayList(
                 expenses.stream()
                         .filter(expense -> expense.getRequestNo() != null && expense.getRequestNo().equalsIgnoreCase(requestNo))
@@ -232,37 +233,37 @@ public class ExpenseController implements Initializable {
     void sortCmbOnAction(ActionEvent event) {
 
         String sortType = sortCmb.getSelectionModel().getSelectedItem();
-        ObservableList<ExpenseTm> expenseTms = FXCollections.observableArrayList(tableData);
+        ObservableList<ExpenseTM> expenseTMS = FXCollections.observableArrayList(tableData);
 
         if (sortType == null) {
             return;
         }
 
-        Comparator<ExpenseTm> comparator = null;
+        Comparator<ExpenseTM> comparator = null;
 
         switch (sortType) {
             case "Expense No (Ascending)":
-                comparator = Comparator.comparing(ExpenseTm::getExpenseNo);
+                comparator = Comparator.comparing(ExpenseTM::getExpenseNo);
                 break;
 
             case "Expense No (Descending)":
-                comparator = Comparator.comparing(ExpenseTm::getExpenseNo).reversed();
+                comparator = Comparator.comparing(ExpenseTM::getExpenseNo).reversed();
                 break;
 
             case "Amount (Ascending)":
-                comparator = Comparator.comparing(ExpenseTm::getAmount);
+                comparator = Comparator.comparing(ExpenseTM::getAmount);
                 break;
 
             case "Amount (Descending)":
-                comparator = Comparator.comparing(ExpenseTm::getAmount).reversed();
+                comparator = Comparator.comparing(ExpenseTM::getAmount).reversed();
                 break;
 
             case "Date (Ascending)":
-                comparator = Comparator.comparing(ExpenseTm::getDate);
+                comparator = Comparator.comparing(ExpenseTM::getDate);
                 break;
 
             case "Date (Descending)":
-                comparator = Comparator.comparing(ExpenseTm::getDate).reversed();
+                comparator = Comparator.comparing(ExpenseTM::getDate).reversed();
                 break;
 
             default:
@@ -270,8 +271,8 @@ public class ExpenseController implements Initializable {
         }
 
         if (comparator != null) {
-            FXCollections.sort(expenseTms, comparator);
-            table.setItems(expenseTms);
+            FXCollections.sort(expenseTMS, comparator);
+            table.setItems(expenseTMS);
         }
     }
 
@@ -286,13 +287,13 @@ public class ExpenseController implements Initializable {
             return;
         }
 
-        ObservableList<ExpenseTm> expenseTms = FXCollections.observableArrayList();
+        ObservableList<ExpenseTM> expenseTMS = FXCollections.observableArrayList();
 
         for (int i=0; i<value; i++){
-            expenseTms.add(tableData.get(i));
+            expenseTMS.add(tableData.get(i));
         }
 
-        table.setItems(expenseTms);
+        table.setItems(expenseTMS);
     }
 
 
@@ -311,7 +312,7 @@ public class ExpenseController implements Initializable {
 
     public void tableSearch(){
 
-        FilteredList<ExpenseTm> filteredData = new FilteredList<>(tableData, b -> true);
+        FilteredList<ExpenseTM> filteredData = new FilteredList<>(tableData, b -> true);
 
         searchTxt.textProperty().addListener((observable, oldValue, newValue) -> {
             filteredData.setPredicate(expense -> {
@@ -336,7 +337,7 @@ public class ExpenseController implements Initializable {
             });
         });
 
-        SortedList<ExpenseTm> sortedData = new SortedList<>(filteredData);
+        SortedList<ExpenseTM> sortedData = new SortedList<>(filteredData);
 
         sortedData.comparatorProperty().bind(table.comparatorProperty());
 
@@ -348,7 +349,7 @@ public class ExpenseController implements Initializable {
     public void setRequestNoCmbValues(){
 
         try {
-            ObservableList<String> requestNos = expenseModel.getAllDistinctMaintenanceRequestNos();
+            ObservableList<String> requestNos = expenseBO.getAllDistinctMaintenanceRequestNos();
             requestNoCmb.setItems(requestNos);
             requestNoCmb.getSelectionModel().selectFirst();
         }
@@ -366,7 +367,7 @@ public class ExpenseController implements Initializable {
         ObservableList<String> expenseNos = FXCollections.observableArrayList();
         expenseNos.add("Select");
 
-        for (ExpenseTm x : tableData){
+        for (ExpenseTM x : tableData){
             expenseNos.add(x.getExpenseNo());
 
         }
@@ -382,7 +383,7 @@ public class ExpenseController implements Initializable {
         ObservableList<Integer> rows = FXCollections.observableArrayList();
         int count = 0;
 
-        for (ExpenseTm x : tableData){
+        for (ExpenseTM x : tableData){
             count++;
             rows.add(count);
 
@@ -415,7 +416,13 @@ public class ExpenseController implements Initializable {
     public void loadTable(){
 
         try {
-            tableData = expenseModel.getAllExpenses();
+            ObservableList<ExpenseDTO> expenseDTOS = expenseBO.getAll();
+            ObservableList<ExpenseTM> expenseTMS = FXCollections.observableArrayList();
+
+            for(ExpenseDTO x : expenseDTOS){
+                expenseTMS.add(new ExpenseTM().toTM(x));
+            }
+            tableData = expenseTMS;
             table.setItems(tableData);
 
         } catch (SQLException | ClassNotFoundException e) {

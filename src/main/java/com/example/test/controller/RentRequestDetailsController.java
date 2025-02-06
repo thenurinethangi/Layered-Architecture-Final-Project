@@ -1,18 +1,16 @@
 package com.example.test.controller;
 
-import com.example.test.dto.RequestDto;
-import com.example.test.dto.tm.CustomerTm;
-import com.example.test.dto.tm.RequestTm;
-import com.example.test.model.CustomerModel;
-import com.example.test.model.RentRequestDetailsModel;
-import javafx.collections.ObservableList;
+import com.example.test.bo.BOFactory;
+import com.example.test.bo.custom.RequestBO;
+import com.example.test.dto.CustomerDTO;
+import com.example.test.dto.RequestDTO;
+import com.example.test.entity.Customer;
+import com.example.test.view.tdm.RequestTM;
+import com.example.test.dao.custom.impl.CustomerDAOImpl;
 import javafx.fxml.FXML;
-import javafx.fxml.Initializable;
 import javafx.scene.control.Label;
 
-import java.net.URL;
 import java.sql.SQLException;
-import java.util.ResourceBundle;
 
 public class RentRequestDetailsController {
 
@@ -103,11 +101,11 @@ public class RentRequestDetailsController {
     @FXML
     private Label date;
 
-    private final CustomerModel customerModel = new CustomerModel();
-    private final RentRequestDetailsModel rentRequestDetailsModel = new RentRequestDetailsModel();
-    private RequestTm requestTm;
+    private final RequestBO requestBO = (RequestBO) BOFactory.getInstance().getBO(BOFactory.BOType.REQUEST);
+    private RequestTM requestTm;
 
-    public void setSelectedRequestData(RequestTm request) {
+
+    public void setSelectedRequestData(RequestTM request) {
 
         requestTm = request;
 
@@ -134,7 +132,7 @@ public class RentRequestDetailsController {
     public void getRentRequestDetails(){
 
         try {
-            RequestDto requestDto = rentRequestDetailsModel.getRentRequestDetails(requestTm.getRequestId());
+            RequestDTO requestDto = requestBO.search(requestTm.getRequestId());
 
             date.setText(requestDto.getDate());
             familyMembersCount.setText(String.valueOf(requestDto.getNoOfFamilyMembers()));
@@ -162,13 +160,13 @@ public class RentRequestDetailsController {
         if(requestTm!=null) {
 
             try {
-                ObservableList<CustomerTm> customerDetails= customerModel.getCustomerById(requestTm.getCustomerId());
-                name.setText(customerDetails.get(0).getName());
-                nic.setText(customerDetails.get(0).getNic());
-                address.setText(customerDetails.get(0).getAddress());
-                phoneNo.setText(customerDetails.get(0).getPhoneNo());
-                job.setText(customerDetails.get(0).getJobTitle());
-                livingArrangemnt.setText(customerDetails.get(0).getLivingArrangement());
+                CustomerDTO customer = requestBO.getCustomerDetails(requestTm.getCustomerId());
+                name.setText(customer.getName());
+                nic.setText(customer.getNic());
+                address.setText(customer.getAddress());
+                phoneNo.setText(customer.getPhoneNo());
+                job.setText(customer.getJobTitle());
+                livingArrangemnt.setText(customer.getLivingArrangement());
 
             } catch (SQLException e) {
                 throw new RuntimeException(e);

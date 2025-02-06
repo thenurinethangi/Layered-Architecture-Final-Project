@@ -1,11 +1,14 @@
 package com.example.test.controller;
 
 import com.example.test.SendMail;
-import com.example.test.dto.HouseStatusCheckDto;
-import com.example.test.dto.LeaseAgreementDto;
-import com.example.test.dto.tm.LeaseAgreementTm;
-import com.example.test.model.LeaseAgreementModel;
-import com.example.test.model.TenantModel;
+import com.example.test.bo.BOFactory;
+import com.example.test.bo.custom.LeaseAgreementBO;
+import com.example.test.dto.HouseInspectDTO;
+import com.example.test.dto.LeaseAgreementDTO;
+import com.example.test.dto.TenantDTO;
+import com.example.test.entity.Tenant;
+import com.example.test.view.tdm.LeaseAgreementTM;
+import com.example.test.dao.custom.impl.TenantDAOImpl;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -52,9 +55,8 @@ public class ReSignLeaseAgreementController {
     private Label houseInspectCheckLabel;
 
 
-    private LeaseAgreementTm selectedLeaseAgreement;
-    private final LeaseAgreementModel leaseAgreementModel = new LeaseAgreementModel();
-    private final TenantModel tenantModel = new TenantModel();
+    private LeaseAgreementTM selectedLeaseAgreement;
+    private final LeaseAgreementBO leaseAgreementBO = (LeaseAgreementBO) BOFactory.getInstance().getBO(BOFactory.BOType.LEASEAGREEMENT);
 
 
     @FXML
@@ -74,14 +76,18 @@ public class ReSignLeaseAgreementController {
        }
        else{
            try {
-               String response = leaseAgreementModel.reSignAgreement(selectedLeaseAgreement,leaseTurn);
+               LeaseAgreementDTO leaseAgreementDTO = new LeaseAgreementDTO();
+               leaseAgreementDTO.setLeaseId(selectedLeaseAgreement.getLeaseId());
+               leaseAgreementDTO.setLeaseTurn(leaseTurn);
+
+               String response = leaseAgreementBO.update(leaseAgreementDTO);
                notification(response);
 
                notification("Sent Email To Tenant ID: "+selectedLeaseAgreement.getTenantId()+" , upon re-signing the lease agreement");
 
-               String email = tenantModel.getTenantEmailById(selectedLeaseAgreement.getTenantId());
+               TenantDTO tenant = leaseAgreementBO.getTenantEmail(selectedLeaseAgreement.getTenantId());
                SendMail sendMail = new SendMail();
-               new Thread(() -> sendMail.sendMail(email,"Re-Sign The Lease Agreement","You have ReNewed your lease agreement with our company,\nyour new lease turn is: "+leaseTurn+", Thank You for thrusting us,\nHope you find it helpful,\nThank You!\n\n\nThe Grand View Residences\nColombo 08")).start();
+               new Thread(() -> sendMail.sendMail(tenant.getEmail(),"Re-Sign The Lease Agreement","You have ReNewed your lease agreement with our company,\nyour new lease turn is: "+leaseTurn+", Thank You for thrusting us,\nHope you find it helpful,\nThank You!\n\n\nThe Grand View Residences\nColombo 08")).start();
 
 
            } catch (SQLException | ClassNotFoundException e) {
@@ -94,7 +100,7 @@ public class ReSignLeaseAgreementController {
 
     }
 
-    public void setSelectedAgreementDetails(LeaseAgreementTm leaseAgreement) {
+    public void setSelectedAgreementDetails(LeaseAgreementTM leaseAgreement) {
 
         this.selectedLeaseAgreement = leaseAgreement;
         setDetailsToColumn();
@@ -119,21 +125,21 @@ public class ReSignLeaseAgreementController {
        startDateLabel.setText(String.valueOf(LocalDate.now()));
 
         try {
-            LeaseAgreementDto leaseAgreementDto = leaseAgreementModel.getSelectedAgreementDetails(selectedLeaseAgreement);
+            LeaseAgreementDTO leaseAgreementDto = leaseAgreementBO.search(selectedLeaseAgreement.getLeaseId());
             monthlyRentLabel.setText(String.valueOf(leaseAgreementDto.getMonthlyRent()));
 
-           HouseStatusCheckDto houseStatusCheckDto =  leaseAgreementModel.getLastHouseInspectCheckDetails(selectedLeaseAgreement);
-           if(houseStatusCheckDto.getTotalHouseStatus()==null){
+           HouseInspectDTO houseInspectDto =  leaseAgreementBO.getLastHouseInspectCheckDetails(selectedLeaseAgreement);
+           if(houseInspectDto.getTotalHouseStatus()==null){
 
                houseInspectCheckLabel.setText("No Inspect For This Rented House");
            }
            else{
-               if(houseStatusCheckDto.getIsPaymentDone().equals("N/A")){
+               if(houseInspectDto.getIsPaymentDone().equals("N/A")){
 
-                   houseInspectCheckLabel.setText("Total House Status: "+houseStatusCheckDto.getTotalHouseStatus() + "  ,  No Payments For Damages");
+                   houseInspectCheckLabel.setText("Total House Status: "+ houseInspectDto.getTotalHouseStatus() + "  ,  No Payments For Damages");
                }
                else{
-                   houseInspectCheckLabel.setText("Total House Status: "+houseStatusCheckDto.getTotalHouseStatus() + "  ,  Is Payment Done For Damages: "+ houseStatusCheckDto.getIsPaymentDone());
+                   houseInspectCheckLabel.setText("Total House Status: "+ houseInspectDto.getTotalHouseStatus() + "  ,  Is Payment Done For Damages: "+ houseInspectDto.getIsPaymentDone());
 
                }
            }

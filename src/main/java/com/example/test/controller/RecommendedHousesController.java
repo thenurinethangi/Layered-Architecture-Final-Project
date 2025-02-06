@@ -1,10 +1,11 @@
 package com.example.test.controller;
 
-import com.example.test.dto.RequestDto;
-import com.example.test.dto.UnitDto;
-import com.example.test.dto.tm.RequestTm;
-import com.example.test.model.RecommendedHousesModel;
-import com.example.test.model.RentRequestDetailsModel;
+import com.example.test.bo.BOFactory;
+import com.example.test.bo.custom.RequestBO;
+import com.example.test.dto.RequestDTO;
+import com.example.test.dto.UnitDTO;
+import com.example.test.entity.Unit;
+import com.example.test.view.tdm.RequestTM;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -24,28 +25,17 @@ public class RecommendedHousesController {
     @FXML
     private ListView<String> recommendedHousesList;
 
-    private RequestTm requestTm;
+    private RequestTM requestTm;
+    private RequestDTO requestDTO;
     private String estimatedMonthlyBudgetForRent;
     private ObservableList<String> messageOne = FXCollections.observableArrayList("No Recommended Houses, As There Are Available Options.");
     private ObservableList<String> messageTwo = FXCollections.observableArrayList("No Available Houses For This Request");
     private ObservableList<String> messageThree = FXCollections.observableArrayList("No Recommended Houses For This Request");
-    private final RentRequestDetailsModel rentRequestDetailsModel = new RentRequestDetailsModel();
-    private final RecommendedHousesModel recommendedHousesModel;
-    private ObservableList<UnitDto> availableUnitsDtos;
-    private ObservableList<UnitDto> recommendedUnitsDto;
+    private final RequestBO requestBO = (RequestBO) BOFactory.getInstance().getBO(BOFactory.BOType.REQUEST);
+    private ObservableList<Unit> availableUnitsDtos;
+    private ObservableList<Unit> recommendedUnitsDto;
     private ObservableList<String> recommendedUnits;
     private ObservableList<String> availableUnits;
-
-
-    {
-        try {
-            recommendedHousesModel = new RecommendedHousesModel();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        }
-    }
 
 
     @FXML
@@ -60,7 +50,10 @@ public class RecommendedHousesController {
 
             if(!requestTm.getHouseId().equals("-")){
                 try {
-                    boolean result = recommendedHousesModel.makePreviousHouseAvailable(requestTm);
+                    UnitDTO unitDTO = new UnitDTO();
+                    unitDTO.setHouseId(requestTm.getHouseId());
+                    unitDTO.setStatus("Available");
+                    boolean result = requestBO.setHouseAvailable(unitDTO);
                     if(!result){
                         Notifications notifications = Notifications.create();
                         notifications.title("Notification");
@@ -89,7 +82,11 @@ public class RecommendedHousesController {
             }
 
             try {
-                String response = recommendedHousesModel.updateHouseId(availableUnitsDtos.get(index),requestTm);
+                RequestDTO requestDTO = new RequestDTO();
+                requestDTO.setRequestId(requestTm.getRequestId());
+                requestDTO.setHouseId(availableUnitsDtos.get(index).getHouseId());
+
+                String response = requestBO.updateAssignedHouse(requestDTO);
                 Notifications notifications = Notifications.create();
                 notifications.title("Notification");
                 notifications.text(response);
@@ -122,7 +119,10 @@ public class RecommendedHousesController {
 
             if(!requestTm.getHouseId().equals("-")){
                 try {
-                    boolean result = recommendedHousesModel.makePreviousHouseAvailable(requestTm);
+                    UnitDTO unitDTO = new UnitDTO();
+                    unitDTO.setHouseId(requestTm.getHouseId());
+                    unitDTO.setStatus("Available");
+                    boolean result = requestBO.setHouseAvailable(unitDTO);
                     if(!result){
                         Notifications notifications = Notifications.create();
                         notifications.title("Notification");
@@ -152,8 +152,11 @@ public class RecommendedHousesController {
             }
 
             try {
+                RequestDTO requestDTO = new RequestDTO();
+                requestDTO.setRequestId(requestTm.getRequestId());
+                requestDTO.setHouseId(recommendedUnitsDto.get(index).getHouseId());
+                String response = requestBO.updateAssignedHouse(requestDTO);
 
-                String response = recommendedHousesModel.updateHouseId(recommendedUnitsDto.get(index), requestTm);
                 Notifications notifications = Notifications.create();
                 notifications.title("Notification");
                 notifications.text(response);
@@ -172,7 +175,7 @@ public class RecommendedHousesController {
     }
 
 
-    public void setSelectedRequestData(RequestTm request) {
+    public void setSelectedRequestData(RequestTM request) {
 
         requestTm = request;
 
@@ -181,6 +184,7 @@ public class RecommendedHousesController {
             getAvailableRentHouses();
         }
         else{
+            getSelectedRequestData();
             getAvailableSellHouses();
         }
     }
@@ -190,8 +194,8 @@ public class RecommendedHousesController {
     public void getSelectedRequestData(){
 
         try {
-            RequestDto requestDto = rentRequestDetailsModel.getRentRequestDetails(requestTm.getRequestId());
-            estimatedMonthlyBudgetForRent = requestDto.getEstimatedMonthlyBudgetForRent();
+            requestDTO = requestBO.search(requestTm.getRequestId());
+            estimatedMonthlyBudgetForRent = requestDTO.getEstimatedMonthlyBudgetForRent();
 
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -204,8 +208,8 @@ public class RecommendedHousesController {
     public void getAvailableRentHouses(){
 
         try {
-            availableUnits = recommendedHousesModel.getAvailableRentHouses(requestTm,estimatedMonthlyBudgetForRent);
-            availableUnitsDtos = recommendedHousesModel.getAvailableRentHousesAsUnitDto(requestTm,estimatedMonthlyBudgetForRent);
+            availableUnits = requestBO.getAvailableRentHouses(requestDTO);
+            availableUnitsDtos = requestBO.getAvailableRentHousesAsUnitObject(requestDTO);
 
             if(availableUnits.isEmpty()){
                 availableHousesList.setItems(messageTwo);
@@ -228,8 +232,8 @@ public class RecommendedHousesController {
     public void getAvailableSellHouses(){
 
         try {
-            availableUnits = recommendedHousesModel.getAvailableSellHouses(requestTm);
-            availableUnitsDtos = recommendedHousesModel.getAvailableSellHousesAsUnitDto(requestTm);
+            availableUnits = requestBO.getAvailableSellHouses(requestDTO);
+            availableUnitsDtos = requestBO.getAvailableSellHousesAsUnitObject(requestDTO);
 
             if(availableUnits.isEmpty()){
                 availableHousesList.setItems(messageTwo);
@@ -252,8 +256,8 @@ public class RecommendedHousesController {
     public void getRecommendedRentHouses(){
 
         try {
-            recommendedUnits = recommendedHousesModel.getRecommendedRentHouses(requestTm);
-            recommendedUnitsDto = recommendedHousesModel.getRecommendedRentHousesAsUnitDto(requestTm);
+            recommendedUnits = requestBO.getRecommendedRentHouses(requestDTO);
+            recommendedUnitsDto = requestBO.getRecommendedRentHousesAsUnitObject(requestDTO);
 
             if(recommendedUnits.isEmpty()){
                 recommendedHousesList.setItems(messageThree);
@@ -275,8 +279,8 @@ public class RecommendedHousesController {
 
         try {
 
-            recommendedUnits = recommendedHousesModel.getRecommendedSellHouses(requestTm);
-            recommendedUnitsDto = recommendedHousesModel.getRecommendedSellHousesAsUnitDto(requestTm);
+            recommendedUnits = requestBO.getRecommendedSellHouses(requestDTO);
+            recommendedUnitsDto = requestBO.getRecommendedSellHousesAsUnitObject(requestDTO);
 
             if (recommendedUnits.isEmpty()) {
                 recommendedHousesList.setItems(messageThree);

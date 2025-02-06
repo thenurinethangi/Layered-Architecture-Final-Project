@@ -1,11 +1,11 @@
 package com.example.test.controller;
 
-import com.example.test.dto.tm.OwnerTm;
-import com.example.test.dto.tm.PurchaseAgreementTm;
-import com.example.test.dto.tm.UnitTm;
-import com.example.test.model.OwnerModel;
-import com.example.test.model.TenantModel;
-import com.example.test.model.UnitModel;
+import com.example.test.bo.BOFactory;
+import com.example.test.bo.custom.OwnerBO;
+import com.example.test.dto.OwnerDTO;
+import com.example.test.dto.UnitDTO;
+import com.example.test.view.tdm.OwnerTM;
+import com.example.test.dao.custom.impl.TenantDAOImpl;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 
@@ -44,12 +44,11 @@ public class OwnerDetailsViewController {
     private Label purchasePrice;
 
 
-    private OwnerTm owner;
-    private final OwnerModel ownerModel = new OwnerModel();
-    private final TenantModel tenantModel = new TenantModel();
+    private OwnerTM owner;
+    private final OwnerBO ownerBO = (OwnerBO) BOFactory.getInstance().getBO(BOFactory.BOType.OWNER);
 
 
-    public void setSelectedOwnerDetails(OwnerTm selectedOwner) {
+    public void setSelectedOwnerDetails(OwnerTM selectedOwner) {
 
         owner = selectedOwner;
 
@@ -62,14 +61,12 @@ public class OwnerDetailsViewController {
         houseId.setText(owner.getOwnerId());
 
         try {
-            String mail =  ownerModel.getOwnerEmailById(owner.getOwnerId());
-            email.setText(mail);
+            OwnerDTO ownerDTO =  ownerBO.search(owner.getOwnerId());
+            email.setText(ownerDTO.getEmail());
 
-            String type = tenantModel.getHouseTypeByHouseId(owner.getHouseId());
-            houseType.setText(type);
-
-            String price = ownerModel.getPurchasePriceByHouseId(owner.getHouseId());
-            purchasePrice.setText(price);
+            UnitDTO unitDTO = ownerBO.getPurchasePriceByHouseId(owner.getHouseId());
+            purchasePrice.setText(unitDTO.getTotalValue());
+            houseType.setText(unitDTO.getHouseType());
 
         } catch (SQLException | ClassNotFoundException e) {
             e.printStackTrace();

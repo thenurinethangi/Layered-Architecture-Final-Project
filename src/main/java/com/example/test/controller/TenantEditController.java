@@ -1,15 +1,15 @@
 package com.example.test.controller;
 
-import com.example.test.dto.CustomerDto;
-import com.example.test.dto.TenantDto;
-import com.example.test.dto.tm.TenantTm;
-import com.example.test.model.TenantModel;
-import com.example.test.validation.UserInputValidation;
+import com.example.test.bo.BOFactory;
+import com.example.test.bo.custom.TenantBO;
+import com.example.test.dto.TenantDTO;
+import com.example.test.view.tdm.TenantTM;
+import com.example.test.dao.custom.impl.TenantDAOImpl;
+import com.example.test.UserInputValidation;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
@@ -18,7 +18,6 @@ import javafx.util.Duration;
 import org.controlsfx.control.Notifications;
 
 import java.sql.SQLException;
-import java.util.Stack;
 
 public class TenantEditController {
 
@@ -59,8 +58,8 @@ public class TenantEditController {
     private Button canclebtn;
 
 
-    private TenantTm selectedTenant;
-    private final TenantModel tenantModel = new TenantModel();
+    private TenantTM selectedTenant;
+    private final TenantBO tenantBO = (TenantBO) BOFactory.getInstance().getBO(BOFactory.BOType.TENANT);
 
 
     @FXML
@@ -71,11 +70,13 @@ public class TenantEditController {
 
     }
 
+
     @FXML
     void clearOnAction(ActionEvent event) {
 
         clean();
     }
+
 
     @FXML
     void editOnAction(ActionEvent event) {
@@ -104,7 +105,7 @@ public class TenantEditController {
 
             String id = tenantIdLabel.getText();
 
-            TenantDto tenantDto = new TenantDto();
+            TenantDTO tenantDto = new TenantDTO();
             tenantDto.setTenantId(id);
             tenantDto.setName(name);
             tenantDto.setPhoneNo(phoneNo);
@@ -113,7 +114,7 @@ public class TenantEditController {
 
 
             try {
-                String response = tenantModel.updateTenant(tenantDto);
+                String response = tenantBO.update(tenantDto);
                 notification(response);
 
             } catch (SQLException | ClassNotFoundException e) {
@@ -181,7 +182,7 @@ public class TenantEditController {
         return true;
     }
 
-    public void setSelectedTenantDetails(TenantTm tenantTm) {
+    public void setSelectedTenantDetails(TenantTM tenantTm) {
 
         selectedTenant = tenantTm;
 
@@ -191,7 +192,7 @@ public class TenantEditController {
         membersCountTxt.setText(String.valueOf(selectedTenant.getMembersCount()));
 
         try {
-            TenantDto tenantDto = tenantModel.getMoreTenantDetails(selectedTenant.getTenantId());
+            TenantDTO tenantDto = tenantBO.search(selectedTenant.getTenantId());
             emailTxt.setText(tenantDto.getEmail());
         } catch (SQLException | ClassNotFoundException e) {
             e.printStackTrace();

@@ -1,8 +1,10 @@
 package com.example.test.controller;
 
-import com.example.test.dto.tm.OwnerTm;
-import com.example.test.dto.tm.TenantTm;
-import com.example.test.model.OwnerModel;
+import com.example.test.bo.BOFactory;
+import com.example.test.bo.custom.OwnerBO;
+import com.example.test.dto.OwnerDTO;
+import com.example.test.view.tdm.OwnerTM;
+import com.example.test.dao.custom.impl.OwnerDAOImpl;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -36,31 +38,31 @@ import java.util.ResourceBundle;
 public class OwnerController implements Initializable {
 
     @FXML
-    private TableView<OwnerTm> table;
+    private TableView<OwnerTM> table;
 
     @FXML
-    private TableColumn<OwnerTm, String> ownerIdColumn;
+    private TableColumn<OwnerTM, String> ownerIdColumn;
 
     @FXML
-    private TableColumn<OwnerTm, String> nameColumn;
+    private TableColumn<OwnerTM, String> nameColumn;
 
     @FXML
-    private TableColumn<OwnerTm, String> phoneNoColumn;
+    private TableColumn<OwnerTM, String> phoneNoColumn;
 
     @FXML
-    private TableColumn<OwnerTm, Integer> membersCountColumn;
+    private TableColumn<OwnerTM, Integer> membersCountColumn;
 
     @FXML
-    private TableColumn<OwnerTm, String> purchaseDateColumn;
+    private TableColumn<OwnerTM, String> purchaseDateColumn;
 
     @FXML
-    private TableColumn<OwnerTm, String> houseIdColumn;
+    private TableColumn<OwnerTM, String> houseIdColumn;
 
     @FXML
-    private TableColumn<OwnerTm, String> invoiceNoColumn;
+    private TableColumn<OwnerTM, String> invoiceNoColumn;
 
     @FXML
-    private TableColumn<OwnerTm, String> actionColumn;
+    private TableColumn<OwnerTM, String> actionColumn;
 
     @FXML
     private ComboBox<Integer> tableRowsCmb;
@@ -99,10 +101,10 @@ public class OwnerController implements Initializable {
     private TextField searchTxt;
 
 
-    private ObservableList<OwnerTm> tableData;
+    private ObservableList<OwnerTM> tableData;
     private ObservableList<String> names;
     private ObservableList<String> phoneNos;
-    private final OwnerModel ownerModel = new OwnerModel();
+    private OwnerBO ownerBO = (OwnerBO) BOFactory.getInstance().getBO(BOFactory.BOType.OWNER);
 
 
     @FXML
@@ -119,7 +121,7 @@ public class OwnerController implements Initializable {
 
 
         try {
-            names = ownerModel.getNameSuggestions(input);
+            names = ownerBO.getNameSuggestions(input);
             nameList.setItems(names);
         }
         catch (SQLException | ClassNotFoundException e) {
@@ -147,7 +149,7 @@ public class OwnerController implements Initializable {
 
 
         try {
-            phoneNos = ownerModel.getPhoneNosSuggestions(input);
+            phoneNos = ownerBO.getPhoneNosSuggestions(input);
             phoneNoList.setItems(phoneNos);
         }
         catch (SQLException | ClassNotFoundException e) {
@@ -173,7 +175,7 @@ public class OwnerController implements Initializable {
     @FXML
     void searchOnAction(ActionEvent event) {
 
-        ObservableList<OwnerTm> searchedOwners = FXCollections.observableArrayList();
+        ObservableList<OwnerTM> searchedOwners = FXCollections.observableArrayList();
 
         String selectedOwnerId = ownerIdCmb.getValue();
         String selectedName = nameTxt.getText();
@@ -189,7 +191,7 @@ public class OwnerController implements Initializable {
 
         if (ownerIdSelected) {
 
-            ObservableList<OwnerTm> ownersById = getOwnerById(selectedOwnerId);
+            ObservableList<OwnerTM> ownersById = getOwnerById(selectedOwnerId);
 
             if (ownersById.isEmpty()) {
                 table.setItems(ownersById);
@@ -218,7 +220,7 @@ public class OwnerController implements Initializable {
 
         } else if (nameSelected || phoneNoSelected || houseIdSelected || invoiceNoSelected) {
 
-            ObservableList<OwnerTm> allOwners = tableData;
+            ObservableList<OwnerTM> allOwners = tableData;
             searchedOwners.addAll(allOwners);
 
             if (nameSelected) {
@@ -240,13 +242,13 @@ public class OwnerController implements Initializable {
             table.setItems(searchedOwners);
 
         } else {
-            ObservableList<OwnerTm> allOwners = tableData;
+            ObservableList<OwnerTM> allOwners = tableData;
             table.setItems(allOwners);
         }
     }
 
 
-    public ObservableList<OwnerTm> getOwnerById(String ownerId) {
+    public ObservableList<OwnerTM> getOwnerById(String ownerId) {
         return FXCollections.observableArrayList(
                 tableData.stream()
                         .filter(owner -> owner.getOwnerId().equalsIgnoreCase(ownerId))
@@ -255,7 +257,7 @@ public class OwnerController implements Initializable {
     }
 
 
-    public ObservableList<OwnerTm> filterOwnersByName(ObservableList<OwnerTm> owners, String name) {
+    public ObservableList<OwnerTM> filterOwnersByName(ObservableList<OwnerTM> owners, String name) {
         return FXCollections.observableArrayList(
                 owners.stream()
                         .filter(owner -> owner.getName().toLowerCase().contains(name.toLowerCase()))
@@ -264,7 +266,7 @@ public class OwnerController implements Initializable {
     }
 
 
-    public ObservableList<OwnerTm> filterOwnersByPhoneNo(ObservableList<OwnerTm> owners, String phoneNo) {
+    public ObservableList<OwnerTM> filterOwnersByPhoneNo(ObservableList<OwnerTM> owners, String phoneNo) {
         return FXCollections.observableArrayList(
                 owners.stream()
                         .filter(owner -> owner.getPhoneNo().contains(phoneNo))
@@ -273,7 +275,7 @@ public class OwnerController implements Initializable {
     }
 
 
-    public ObservableList<OwnerTm> filterOwnersByHouseId(ObservableList<OwnerTm> owners, String houseId) {
+    public ObservableList<OwnerTM> filterOwnersByHouseId(ObservableList<OwnerTM> owners, String houseId) {
         return FXCollections.observableArrayList(
                 owners.stream()
                         .filter(owner -> owner.getHouseId().equalsIgnoreCase(houseId))
@@ -282,7 +284,7 @@ public class OwnerController implements Initializable {
     }
 
 
-    public ObservableList<OwnerTm> filterOwnersByInvoiceNo(ObservableList<OwnerTm> owners, String invoiceNo) {
+    public ObservableList<OwnerTM> filterOwnersByInvoiceNo(ObservableList<OwnerTM> owners, String invoiceNo) {
         return FXCollections.observableArrayList(
                 owners.stream()
                         .filter(owner -> owner.getInvoiceNo().equalsIgnoreCase(invoiceNo))
@@ -295,53 +297,53 @@ public class OwnerController implements Initializable {
     void sortCmbOnAction(ActionEvent event) {
 
         String sortType = sortCmb.getSelectionModel().getSelectedItem();
-        ObservableList<OwnerTm> ownerTms = FXCollections.observableArrayList(tableData);
+        ObservableList<OwnerTM> ownerTMS = FXCollections.observableArrayList(tableData);
 
         if (sortType == null) {
             return;
         }
 
-        Comparator<OwnerTm> comparator = null;
+        Comparator<OwnerTM> comparator = null;
 
         switch (sortType) {
             case "Owner ID (Ascending)":
-                comparator = Comparator.comparing(OwnerTm::getOwnerId);
+                comparator = Comparator.comparing(OwnerTM::getOwnerId);
                 break;
 
             case "Owner ID (Descending)":
-                comparator = Comparator.comparing(OwnerTm::getOwnerId).reversed();
+                comparator = Comparator.comparing(OwnerTM::getOwnerId).reversed();
                 break;
 
             case "Owner Name (Ascending)":
-                comparator = Comparator.comparing(OwnerTm::getName);
+                comparator = Comparator.comparing(OwnerTM::getName);
                 break;
 
             case "Owner Name (Descending)":
-                comparator = Comparator.comparing(OwnerTm::getName).reversed();
+                comparator = Comparator.comparing(OwnerTM::getName).reversed();
                 break;
 
             case "Resident Count (Ascending)":
-                comparator = Comparator.comparing(OwnerTm::getMembersCount);
+                comparator = Comparator.comparing(OwnerTM::getMembersCount);
                 break;
 
             case "Resident Count (Descending)":
-                comparator = Comparator.comparing(OwnerTm::getMembersCount).reversed();
+                comparator = Comparator.comparing(OwnerTM::getMembersCount).reversed();
                 break;
 
             case "Purchase Date (Ascending)":
-                comparator = Comparator.comparing(OwnerTm::getPurchaseDate);
+                comparator = Comparator.comparing(OwnerTM::getPurchaseDate);
                 break;
 
             case "Purchase Date (Descending)":
-                comparator = Comparator.comparing(OwnerTm::getPurchaseDate).reversed();
+                comparator = Comparator.comparing(OwnerTM::getPurchaseDate).reversed();
                 break;
 
             case "Invoice Number (Ascending)":
-                comparator = Comparator.comparing(OwnerTm::getInvoiceNo);
+                comparator = Comparator.comparing(OwnerTM::getInvoiceNo);
                 break;
 
             case "Invoice Number (Descending)":
-                comparator = Comparator.comparing(OwnerTm::getInvoiceNo).reversed();
+                comparator = Comparator.comparing(OwnerTM::getInvoiceNo).reversed();
                 break;
 
             default:
@@ -349,8 +351,8 @@ public class OwnerController implements Initializable {
         }
 
         if (comparator != null) {
-            FXCollections.sort(ownerTms, comparator);
-            table.setItems(ownerTms);
+            FXCollections.sort(ownerTMS, comparator);
+            table.setItems(ownerTMS);
         }
     }
 
@@ -364,13 +366,13 @@ public class OwnerController implements Initializable {
             return;
         }
 
-        ObservableList<OwnerTm> ownerTms = FXCollections.observableArrayList();
+        ObservableList<OwnerTM> ownerTMS = FXCollections.observableArrayList();
 
         for (int i=0; i<value; i++){
-            ownerTms.add(tableData.get(i));
+            ownerTMS.add(tableData.get(i));
         }
 
-        table.setItems(ownerTms);
+        table.setItems(ownerTMS);
     }
 
 
@@ -391,7 +393,7 @@ public class OwnerController implements Initializable {
 
     public void tableSearch() {
 
-        FilteredList<OwnerTm> filteredData = new FilteredList<>(tableData, b -> true);
+        FilteredList<OwnerTM> filteredData = new FilteredList<>(tableData, b -> true);
 
         searchTxt.textProperty().addListener((observable, oldValue, newValue) -> {
             filteredData.setPredicate(owner -> {
@@ -420,7 +422,7 @@ public class OwnerController implements Initializable {
             });
         });
 
-        SortedList<OwnerTm> sortedData = new SortedList<>(filteredData);
+        SortedList<OwnerTM> sortedData = new SortedList<>(filteredData);
 
         sortedData.comparatorProperty().bind(table.comparatorProperty());
 
@@ -433,7 +435,7 @@ public class OwnerController implements Initializable {
         ObservableList<String> ownerIds = FXCollections.observableArrayList();
         ownerIds.add("Select");
 
-        for(OwnerTm x : tableData){
+        for(OwnerTM x : tableData){
            ownerIds.add(x.getOwnerId());
         }
 
@@ -453,7 +455,7 @@ public class OwnerController implements Initializable {
     public void setInvoiceNoCmbValues(){
 
         try {
-            ObservableList<String> invoiceNos = ownerModel.getAllDistinctInvoiceNos();
+            ObservableList<String> invoiceNos = ownerBO.getAllDistinctInvoiceNos();
             invoiceNoCmb.setItems(invoiceNos);
             invoiceNoCmb.getSelectionModel().selectFirst();
         } catch (SQLException | ClassNotFoundException e) {
@@ -467,7 +469,7 @@ public class OwnerController implements Initializable {
     public void setHouseIdCmbValues(){
 
         try {
-            ObservableList<String> houseIds = ownerModel.getAllHouseIds();
+            ObservableList<String> houseIds = ownerBO.getAllHouseIds();
             houseIdCmb.setItems(houseIds);
             houseIdCmb.getSelectionModel().selectFirst();
         } catch (SQLException | ClassNotFoundException e) {
@@ -484,7 +486,7 @@ public class OwnerController implements Initializable {
         ObservableList<Integer> rows = FXCollections.observableArrayList();
         int count = 0;
 
-        for (OwnerTm x : tableData){
+        for (OwnerTM x : tableData){
             count++;
             rows.add(count);
 
@@ -511,9 +513,9 @@ public class OwnerController implements Initializable {
 
     public void setTableAction(){
 
-        Callback<TableColumn<OwnerTm, String>, TableCell<OwnerTm, String>> cellFoctory = (TableColumn<OwnerTm, String> param) -> {
+        Callback<TableColumn<OwnerTM, String>, TableCell<OwnerTM, String>> cellFoctory = (TableColumn<OwnerTM, String> param) -> {
 
-            final TableCell<OwnerTm, String> cell = new TableCell<OwnerTm, String>() {
+            final TableCell<OwnerTM, String> cell = new TableCell<OwnerTM, String>() {
                 @Override
                 public void updateItem(String item, boolean empty) {
                     super.updateItem(item, empty);
@@ -523,8 +525,8 @@ public class OwnerController implements Initializable {
                         setText(null);
 
                     } else {
-                        Image image1 = new Image("C:\\Users\\Laptop World\\IdeaProjects\\test\\src\\main\\resources\\image\\visibility.png");
-                        Image image2 = new Image("C:\\Users\\Laptop World\\IdeaProjects\\test\\src\\main\\resources\\image\\editText.png");
+                        Image image1 = new Image("C:\\Users\\PCWORLD\\IdeaProjects\\Semester_final\\src\\main\\resources\\assets\\image\\visibility.png");
+                        Image image2 = new Image("C:\\Users\\PCWORLD\\IdeaProjects\\Semester_final\\src\\main\\resources\\assets\\image\\editText.png");
 
                         ImageView viewDetails = new ImageView();
                         viewDetails.setImage(image1);
@@ -542,10 +544,10 @@ public class OwnerController implements Initializable {
 
                         viewDetails.setOnMouseClicked((MouseEvent event) -> {
 
-                            OwnerTm selectedOwner = table.getSelectionModel().getSelectedItem();
+                            OwnerTM selectedOwner = table.getSelectionModel().getSelectedItem();
 
                             try {
-                                FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/OwnerDetailsView.fxml"));
+                                FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/OwnerDetailsView.fxml"));
                                 Parent root = fxmlLoader.load();
                                 OwnerDetailsViewController ownerDetailsViewController = fxmlLoader.getController();
                                 ownerDetailsViewController.setSelectedOwnerDetails(selectedOwner);
@@ -564,10 +566,10 @@ public class OwnerController implements Initializable {
 
                         edit.setOnMouseClicked((MouseEvent event) -> {
 
-                            OwnerTm selectedOwner = table.getSelectionModel().getSelectedItem();
+                            OwnerTM selectedOwner = table.getSelectionModel().getSelectedItem();
 
                             try {
-                                FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/EditOwner.fxml"));
+                                FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/EditOwner.fxml"));
                                 Parent root = fxmlLoader.load();
                                 EditOwnerController editOwnerController = fxmlLoader.getController();
                                 editOwnerController.setSelectedOwnerDetailsToUpdate(selectedOwner);
@@ -612,7 +614,13 @@ public class OwnerController implements Initializable {
     public void loadTable(){
 
         try {
-            tableData = ownerModel.getAllOwners();
+            ObservableList<OwnerDTO> ownerDTOS = ownerBO.getAll();
+            ObservableList<OwnerTM> ownerTMS = FXCollections.observableArrayList();
+
+            for(OwnerDTO x :  ownerDTOS){
+                ownerTMS.add(new OwnerTM().toTM(x));
+            }
+            tableData = ownerTMS;
             table.setItems(tableData);
 
         } catch (SQLException | ClassNotFoundException e) {

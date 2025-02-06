@@ -12,7 +12,9 @@ module com.example.test {
     opens com.example.test.db to javafx.base;
     opens com.example.test to javafx.fxml, lombok;
     opens com.example.test.dto to javafx.base;
-    opens com.example.test.dto.tm to javafx.base;
     opens com.example.test.controller to javafx.fxml;
     exports com.example.test;
+    opens com.example.test.view.tdm to javafx.base;
+    exports com.example.test.dao;
+    opens com.example.test.dao to javafx.fxml, lombok;
 }

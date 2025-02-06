@@ -1,10 +1,12 @@
 package com.example.test.controller;
 
-import com.example.test.dto.OwnerDto;
-import com.example.test.dto.TenantDto;
-import com.example.test.dto.tm.OwnerTm;
-import com.example.test.model.OwnerModel;
-import com.example.test.validation.UserInputValidation;
+import com.example.test.bo.BOFactory;
+import com.example.test.bo.custom.OwnerBO;
+import com.example.test.dto.OwnerDTO;
+import com.example.test.entity.Owner;
+import com.example.test.view.tdm.OwnerTM;
+import com.example.test.dao.custom.impl.OwnerDAOImpl;
+import com.example.test.UserInputValidation;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
@@ -57,8 +59,8 @@ public class EditOwnerController {
     private Button canclebtn;
 
 
-    private OwnerTm owner;
-    private final OwnerModel ownerModel = new OwnerModel();
+    private OwnerTM owner;
+    private OwnerBO ownerBO = (OwnerBO) BOFactory.getInstance().getBO(BOFactory.BOType.OWNER);
 
 
     @FXML
@@ -101,7 +103,7 @@ public class EditOwnerController {
 
             String id = ownerIdLabel.getText();
 
-            OwnerDto ownerDto = new OwnerDto();
+            OwnerDTO ownerDto = new OwnerDTO();
             ownerDto.setOwnerId(id);
             ownerDto.setName(name);
             ownerDto.setPhoneNo(phoneNo);
@@ -110,7 +112,7 @@ public class EditOwnerController {
 
 
             try {
-                String response = ownerModel.updateOwner(ownerDto);
+                String response = ownerBO.update(ownerDto);
                 notification(response);
 
             } catch (SQLException | ClassNotFoundException e) {
@@ -189,7 +191,7 @@ public class EditOwnerController {
     }
 
 
-    public void setSelectedOwnerDetailsToUpdate(OwnerTm selectedOwner) {
+    public void setSelectedOwnerDetailsToUpdate(OwnerTM selectedOwner) {
 
         owner = selectedOwner;
 
@@ -199,8 +201,8 @@ public class EditOwnerController {
         membersCountTxt.setText(String.valueOf(owner.getMembersCount()));
 
         try {
-            String email = ownerModel.getOwnerEmailById(owner.getOwnerId());
-            emailTxt.setText(email);
+            OwnerDTO ownerDTO = ownerBO.search(owner.getOwnerId());
+            emailTxt.setText(ownerDTO.getEmail());
         } catch (SQLException | ClassNotFoundException e) {
             e.printStackTrace();
             System.err.println("Error while setting owner id: "+owner.getOwnerId()+" details"+ e.getMessage());

@@ -1,9 +1,9 @@
 package com.example.test.controller;
 
-import com.example.test.dto.SignUpDto;
-import com.example.test.logindata.LoginDetails;
-import com.example.test.model.UserProfileEditModel;
-import com.example.test.validation.UserInputValidation;
+import com.example.test.LoginDetails;
+import com.example.test.UserInputValidation;
+import com.example.test.bo.BOFactory;
+import com.example.test.bo.custom.UserProfileBO;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -17,7 +17,6 @@ import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
 
 import java.sql.SQLException;
-import java.util.Arrays;
 
 public class UserProfileEditController {
 
@@ -40,27 +39,15 @@ public class UserProfileEditController {
     @FXML
     private Button exitbtn;
 
-    private FXMLLoader fxmlLoader;
-    private AnchorPane anchorPane;
-    private Stage stage;
-    private UserProfileEditModel userProfileEditModel;
 
-    public UserProfileEditController(){
-
-        try {
-            userProfileEditModel = new UserProfileEditModel();
-        }
-        catch (Exception e){
-            e.printStackTrace();
-        }
-    }
+    private UserProfileBO userProfileBO = (UserProfileBO) BOFactory.getInstance().getBO(BOFactory.BOType.USERPROFILE);
 
 
     @FXML
     void exitOnAction(ActionEvent event) {
 
         try {
-            fxmlLoader = new FXMLLoader(getClass().getResource("/view/UserProfile.fxml"));
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/UserProfile.fxml"));
             Parent root = fxmlLoader.load();
             Scene scene = new Scene(root);
             Stage stage = (Stage)((Node)event.getSource()).getScene().getWindow();
@@ -78,7 +65,7 @@ public class UserProfileEditController {
     }
 
     @FXML
-    void saveOnAction(ActionEvent event) throws SQLException {
+    void saveOnAction(ActionEvent event) throws SQLException, ClassNotFoundException {
 
         String userName = unametxt.getText();
         String name = fnametxt.getText();
@@ -163,7 +150,7 @@ public class UserProfileEditController {
 
 
             case 1 -> {
-                String result = userProfileEditModel.changeUserDetailsOne(data, column);
+                String result = userProfileBO.changeUserDetailsOne(data, column);
                 Alert alert = new Alert(Alert.AlertType.INFORMATION, result);
                 alert.showAndWait();
                 if(result.equals("Successfully updated your profile") && column[0].equals("userName")){
@@ -171,7 +158,7 @@ public class UserProfileEditController {
                 }
             }
             case 2 -> {
-                String result = userProfileEditModel.changeUserDetailsTwo(data, column);
+                String result = userProfileBO.changeUserDetailsTwo(data, column);
                 Alert alert = new Alert(Alert.AlertType.INFORMATION, result);
                 alert.showAndWait();
                 int index = 0;
@@ -188,7 +175,7 @@ public class UserProfileEditController {
                 }
             }
             case 3 -> {
-                String result = userProfileEditModel.changeUserDetailsThree(data, column);
+                String result = userProfileBO.changeUserDetailsThree(data, column);
                 Alert alert = new Alert(Alert.AlertType.INFORMATION, result);
                 alert.showAndWait();
 
@@ -206,7 +193,7 @@ public class UserProfileEditController {
                 }
             }
             case 4 -> {
-                String result = userProfileEditModel.changeUserDetailsFour(data, column);
+                String result = userProfileBO.changeUserDetailsFour(data, column);
                 Alert alert = new Alert(Alert.AlertType.INFORMATION, result);
                 alert.showAndWait();
 

@@ -1,20 +1,23 @@
 package com.example.test.controller;
 
-import com.example.test.dto.HouseReturnDto;
-import com.example.test.dto.HouseStatusCheckDto;
-import com.example.test.dto.TenantDto;
-import com.example.test.dto.tm.LeaseAgreementTm;
-import com.example.test.model.HouseStatusCheckModel;
-import com.example.test.model.ReturnHouseModel;
-import com.example.test.model.TenantModel;
+import com.example.test.bo.BOFactory;
+import com.example.test.bo.custom.HouseReturnBO;
+import com.example.test.dto.HouseInspectDTO;
+import com.example.test.dto.HouseReturnDTO;
+import com.example.test.dto.TenantDTO;
+import com.example.test.entity.HouseInspect;
+import com.example.test.entity.HouseReturn;
+import com.example.test.entity.Tenant;
+import com.example.test.view.tdm.LeaseAgreementTM;
+import com.example.test.dao.custom.impl.HouseInspectDAOImpl;
+import com.example.test.dao.custom.impl.HouseReturnDAOImpl;
+import com.example.test.dao.custom.impl.TenantDAOImpl;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
-import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextArea;
-import javafx.stage.Stage;
 import javafx.util.Duration;
 import org.controlsfx.control.Notifications;
 
@@ -49,18 +52,18 @@ public class HouseReturnConformationController {
     @FXML
     private TextArea messageLabel;
 
-    private LeaseAgreementTm selectedLeaseAgreementDetails;
-    private final TenantModel tenantModel = new TenantModel();
-    private final HouseStatusCheckModel houseStatusCheckModel = new HouseStatusCheckModel();
-    private final ReturnHouseModel returnHouseModel = new ReturnHouseModel();
-    private  HouseReturnDto houseReturnDto;
-    private TenantDto tenant;
+    private LeaseAgreementTM selectedLeaseAgreementDetails;
+    private final HouseReturnBO houseReturnBO = (HouseReturnBO) BOFactory.getInstance().getBO(BOFactory.BOType.HOUSERETURN);
+    private HouseReturnDTO houseReturnDto;
+    private TenantDTO tenant;
+
+
 
     @FXML
     void onlyReturnOnAction(ActionEvent event) {
 
         try {
-            String response = returnHouseModel.reclaimHouse(houseReturnDto);
+            String response = houseReturnBO.reclaimHouse(houseReturnDto,selectedLeaseAgreementDetails.getLeaseId());
             notification(response);
 
             if(response.equals("Successfully Reclaiming The House!")){
@@ -80,7 +83,7 @@ public class HouseReturnConformationController {
     void rePayAndReturnOnAction(ActionEvent event) {
 
         try {
-            String response = returnHouseModel.reclaimHouseWithRefundSecurityDeposit(houseReturnDto,tenant);
+            String response = houseReturnBO.reclaimHouseWithRefundSecurityDeposit(houseReturnDto,selectedLeaseAgreementDetails.getLeaseId());
             notification(response);
 
             if(response.equals("Successfully Refund The Security Payment And Reclaiming The House!")){
@@ -97,36 +100,40 @@ public class HouseReturnConformationController {
     }
 
 
-    public void setSelectedAgreementDetailsToReturn(LeaseAgreementTm selectedLeaseAgreement) {
+    public void setSelectedAgreementDetailsToReturn(LeaseAgreementTM selectedLeaseAgreement) {
 
         this.selectedLeaseAgreementDetails = selectedLeaseAgreement;
 
-        houseReturnDto = new HouseReturnDto(selectedLeaseAgreementDetails.getTenantId(),selectedLeaseAgreementDetails.getHouseId(),selectedLeaseAgreementDetails.getLeaseId(),"Expiration of the Lease Turn");
+        houseReturnDto = new HouseReturnDTO();
+        houseReturnDto.setTenantId(selectedLeaseAgreement.getTenantId());
+        houseReturnDto.setHouseId(selectedLeaseAgreement.getHouseId());
+        houseReturnDto.setReason("Expiration of the Lease Turn");
 
         tenantIdLabel.setText(selectedLeaseAgreement.getTenantId());
         houseIdLabel.setText(selectedLeaseAgreement.getHouseId());
 
         try{
 
-            tenant = tenantModel.getMoreTenantDetails(selectedLeaseAgreement.getTenantId());
+            tenant = houseReturnBO.getTenantDetails(selectedLeaseAgreement.getTenantId());
             tenantNameLabel.setText(tenant.getName());
             lastPaidDateLabel.setText(tenant.getLastPaidMonth());
             remainingDepositLabel.setText(String.valueOf(tenant.getSecurityPaymentRemain()));
+            houseReturnDto.setRefundedAmount(String.valueOf(tenant.getSecurityPaymentRemain()));
 
-            HouseStatusCheckDto houseStatusCheckDto = houseStatusCheckModel.getLastInspectCheckByTenant(selectedLeaseAgreementDetails.getTenantId());
-            if(houseStatusCheckDto.getTotalHouseStatus()==null){
+            HouseInspectDTO houseInspectDto = houseReturnBO.getLatestHouseInspectOfTenant(selectedLeaseAgreementDetails.getTenantId());
+            if(houseInspectDto.getTotalHouseStatus()==null){
 
                 lastHouseStatusCheckLabel.setText("No Inspect For This Rented House");
             }
             else{
-                if(houseStatusCheckDto.getIsPaymentDone().equals("N/A")){
+                if(houseInspectDto.getIsPaymentDone().equals("N/A")){
 
-                    lastHouseStatusCheckLabel.setText("Total House Status: "+houseStatusCheckDto.getTotalHouseStatus() + "  ,  No Damages Noted In The Last Inspection");
+                    lastHouseStatusCheckLabel.setText("Total House Status: "+ houseInspectDto.getTotalHouseStatus() + "  ,  No Damages Noted In The Last Inspection");
                 }
                 else{
-                    lastHouseStatusCheckLabel.setText("Total House Status: "+houseStatusCheckDto.getTotalHouseStatus() + "  ,  Is Payment Done For Damages: "+ houseStatusCheckDto.getIsPaymentDone());
+                    lastHouseStatusCheckLabel.setText("Total House Status: "+ houseInspectDto.getTotalHouseStatus() + "  ,  Is Payment Done For Damages: "+ houseInspectDto.getIsPaymentDone());
 
-                    if(houseStatusCheckDto.getTotalHouseStatus().equals("Damaged") && houseStatusCheckDto.getIsPaymentDone().equals("Not Yet")){
+                    if(houseInspectDto.getTotalHouseStatus().equals("Damaged") && houseInspectDto.getIsPaymentDone().equals("Not Yet")){
                         messageLabel.setText("The tenant has damaged the house without compensation.\nIt is advised to seek payment and reclaim the property");
                         rePayAndReturnBtn.setDisable(true);
                     }

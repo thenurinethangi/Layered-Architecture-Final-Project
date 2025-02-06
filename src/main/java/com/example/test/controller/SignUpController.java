@@ -1,9 +1,10 @@
 package com.example.test.controller;
 
-import com.example.test.dto.SignUpDto;
-import com.example.test.logindata.LoginDetails;
-import com.example.test.model.SignUpModel;
-import com.example.test.validation.UserInputValidation;
+import com.example.test.bo.BOFactory;
+import com.example.test.bo.custom.SignUpBO;
+import com.example.test.dto.UserDTO;
+import com.example.test.LoginDetails;
+import com.example.test.UserInputValidation;
 import javafx.animation.TranslateTransition;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -50,24 +51,14 @@ public class SignUpController {
     @FXML
     private TextField userName;
 
-    private SignUpModel signUpModel;
 
-
-    public SignUpController(){
-
-        try {
-            signUpModel = new SignUpModel();
-        }
-        catch (Exception e){
-            e.printStackTrace();
-        }
-    }
+    private SignUpBO signUpBO = (SignUpBO) BOFactory.getInstance().getBO(BOFactory.BOType.SIGNUP);
 
 
     @FXML
     void signInOnAction(ActionEvent event) throws IOException {
 
-        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/SignIn.fxml"));
+        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/SignIn.fxml"));
         Parent root = fxmlLoader.load();
         Scene scene = new Scene(root);
         Stage stage = (Stage)((Node)event.getSource()).getScene().getWindow();
@@ -90,7 +81,7 @@ public class SignUpController {
     }
 
     @FXML
-    void signUpOnAction(ActionEvent event) throws IOException, SQLException {
+    void signUpOnAction(ActionEvent event) throws IOException, SQLException, ClassNotFoundException {
 
         String uName = userName.getText();
         String name = fullName.getText();
@@ -114,10 +105,9 @@ public class SignUpController {
 
             if(b1 && b2 && b3 && b4){
 
-                SignUpDto signUpDto = new SignUpDto(uName,name,em,pWord);
-                String result = signUpModel.checkUserNameAlreadyExist(signUpDto);
-                if(result.equals("this user name exist")){
-
+                UserDTO userDto = new UserDTO(uName,name,em,pWord);
+                boolean result = signUpBO.isExist(userDto);
+                if(result){
                     Alert alert = new Alert(Alert.AlertType.WARNING);
                     alert.setTitle("Warning");
                     alert.setHeaderText("This user name already exist");
@@ -132,11 +122,11 @@ public class SignUpController {
 
                     Stage s1 = (Stage)((Node)event.getSource()).getScene().getWindow();
 
-                    FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/SignUpQuestions.fxml"));
+                    FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/SignUpQuestions.fxml"));
                     Parent root = fxmlLoader.load();
 
                     SignUpQuestionsController signUpQuestionsController = fxmlLoader.getController();
-                    signUpQuestionsController.setSignUpData(signUpDto,s1);
+                    signUpQuestionsController.setSignUpData(userDto,s1);
 
                     Scene scene = new Scene(root);
                     Stage stage = new Stage();
@@ -180,6 +170,7 @@ public class SignUpController {
         }
 
     }
+
 
     public void exitOnAction(ActionEvent event) {
 

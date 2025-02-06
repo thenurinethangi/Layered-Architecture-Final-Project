@@ -1,8 +1,12 @@
 package com.example.test.controller;
 
-import com.example.test.dto.tm.LeaseAgreementTm;
-import com.example.test.dto.tm.PaymentTm;
-import com.example.test.model.LeaseAgreementModel;
+import com.example.test.bo.BOFactory;
+import com.example.test.bo.custom.LeaseAgreementBO;
+import com.example.test.dto.TenantDTO;
+import com.example.test.entity.Tenant;
+import com.example.test.view.tdm.LeaseAgreementTM;
+import com.example.test.view.tdm.PaymentTM;
+import com.example.test.dao.custom.impl.LeaseAgreementDAOImpl;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
@@ -13,7 +17,6 @@ import javafx.scene.control.TextField;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
 import javafx.stage.Stage;
-import javafx.scene.control.Alert;
 import javafx.util.Duration;
 import org.controlsfx.control.Notifications;
 
@@ -50,9 +53,9 @@ public class MailSendFormInLeaseAgreementController {
     @FXML
     private Button send;
 
-    private final LeaseAgreementModel leaseAgreementModel = new LeaseAgreementModel();
+    private final LeaseAgreementBO leaseAgreementBO = (LeaseAgreementBO) BOFactory.getInstance().getBO(BOFactory.BOType.LEASEAGREEMENT);
     private String email;
-    private PaymentTm payment;
+    private PaymentTM payment;
 
 
 
@@ -201,14 +204,15 @@ public class MailSendFormInLeaseAgreementController {
     }
 
 
-    public void setSelectedTenantDetailsToSendMail(LeaseAgreementTm selectedLeaseAgreement, String sub, String message) {
+    public void setSelectedTenantDetailsToSendMail(LeaseAgreementTM selectedLeaseAgreement, String sub, String message) {
 
         subjectTxt.setText(sub);
         messageArea.setText(message);
 
         try {
-            email = leaseAgreementModel.getTenantEmail(selectedLeaseAgreement.getTenantId());
-            receiverEmailAddress.setText(email);
+            TenantDTO tenant = leaseAgreementBO.getTenantEmail(selectedLeaseAgreement.getTenantId());
+            email = tenant.getEmail();
+            receiverEmailAddress.setText(tenant.getEmail());
         } catch (SQLException | ClassNotFoundException e) {
             e.printStackTrace();
             System.err.println("Error while setting tenant details to send mail: " + e.getMessage());
@@ -219,7 +223,7 @@ public class MailSendFormInLeaseAgreementController {
 
 
 
-    public void setPaymentDetailsToSendMail(PaymentTm selectedPayment) {
+    public void setPaymentDetailsToSendMail(PaymentTM selectedPayment) {
 
         payment = selectedPayment;
 
@@ -227,8 +231,9 @@ public class MailSendFormInLeaseAgreementController {
         messageArea.setText("I am writing to confirm that your recent " + selectedPayment.getPaymentType() + " has been received. \nFor your records, the corresponding invoice is attached.\n\n\nThe Grand View Residences,\nColombo 08");
 
         try {
-            email = leaseAgreementModel.getTenantEmail(selectedPayment.getTenantId());
-            receiverEmailAddress.setText(email);
+            TenantDTO tenant = leaseAgreementBO.getTenantEmail(selectedPayment.getTenantId());
+            email = tenant.getEmail();
+            receiverEmailAddress.setText(tenant.getEmail());
         } catch (SQLException | ClassNotFoundException e) {
             e.printStackTrace();
             System.err.println("Error while setting payment details to send mail: " + e.getMessage());

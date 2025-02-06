@@ -1,7 +1,10 @@
 package com.example.test.controller;
 
-import com.example.test.dto.tm.EmployeeTm;
-import com.example.test.model.EmployeeModel;
+import com.example.test.bo.BOFactory;
+import com.example.test.bo.custom.EmployeeBO;
+import com.example.test.dto.EmployeeDTO;
+import com.example.test.view.tdm.EmployeeTM;
+import com.example.test.dao.custom.impl.EmployeeDAOImpl;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -37,31 +40,31 @@ public class EmployeeController implements Initializable {
     private Button editbtn;
 
     @FXML
-    private TableView<EmployeeTm> table;
+    private TableView<EmployeeTM> table;
 
     @FXML
-    private TableColumn<EmployeeTm, String> employeeIdColumn;
+    private TableColumn<EmployeeTM, String> employeeIdColumn;
 
     @FXML
-    private TableColumn<EmployeeTm, String> nameColumn;
+    private TableColumn<EmployeeTM, String> nameColumn;
 
     @FXML
-    private TableColumn<EmployeeTm, String> addressColumn;
+    private TableColumn<EmployeeTM, String> addressColumn;
 
     @FXML
-    private TableColumn<EmployeeTm, Integer> phoneNoColumn;
+    private TableColumn<EmployeeTM, Integer> phoneNoColumn;
 
     @FXML
-    private TableColumn<EmployeeTm, Double> basicSalaryColumn;
+    private TableColumn<EmployeeTM, Double> basicSalaryColumn;
 
     @FXML
-    private TableColumn<EmployeeTm, Double> allowancesColumn;
+    private TableColumn<EmployeeTM, Double> allowancesColumn;
 
     @FXML
-    private TableColumn<EmployeeTm, String> dobColumn;
+    private TableColumn<EmployeeTM, String> dobColumn;
 
     @FXML
-    private TableColumn<EmployeeTm, String> positionColumn;
+    private TableColumn<EmployeeTM, String> positionColumn;
 
     @FXML
     private Button addNewEmployeeBtn;
@@ -96,32 +99,20 @@ public class EmployeeController implements Initializable {
     @FXML
     private TextField searchTxt;
 
-    private EmployeeModel employeeModel;
-    private ObservableList<EmployeeTm> tableData;
+    private EmployeeBO employeeBO = (EmployeeBO) BOFactory.getInstance().getBO(BOFactory.BOType.EMPLOYEE);
+    private ObservableList<EmployeeTM> tableData;
     private ObservableList<String> addresses;
     private ObservableList<String> names;
     private String employeeId;
     private String position;
 
 
-    public EmployeeController() {
-
-        try {
-            employeeModel = new EmployeeModel();
-        } catch (SQLException | ClassNotFoundException e) {
-            e.printStackTrace();
-            System.err.println("Error while initializing employee controller: " + e.getMessage());
-            notification("An error occurred while loading Employee page. Please try again or contact support.");
-        }
-
-    }
-
 
     @FXML
     void addNewEmployeeOnAction(ActionEvent event) {
 
         try {
-            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/AddNewEmployee.fxml"));
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/AddNewEmployee.fxml"));
             Parent root = fxmlLoader.load();
             Scene scene = new Scene(root);
             Stage stage = new Stage();
@@ -140,7 +131,7 @@ public class EmployeeController implements Initializable {
     @FXML
     void deleteOnAction(ActionEvent event) {
 
-        EmployeeTm selectedItem = table.getSelectionModel().getSelectedItem();
+        EmployeeTM selectedItem = table.getSelectionModel().getSelectedItem();
 
         if (selectedItem == null) {
             return;
@@ -155,10 +146,10 @@ public class EmployeeController implements Initializable {
             if (options.isPresent() && options.get() == yesButton) {
 
                 try {
-                    String response = employeeModel.deleteEmployee(selectedItem);
+                    String response = employeeBO.delete(new EmployeeDTO().toDTO(selectedItem));
                     notification(response);
 
-                } catch (SQLException e) {
+                } catch (SQLException | ClassNotFoundException e) {
                     e.printStackTrace();
                     System.err.println("Error while deleting the employee: " + e.getMessage());
                     notification("An error occurred while deleting the employee id: " + selectedItem.getEmployeeId() + ", Please try again or contact support.");
@@ -176,14 +167,14 @@ public class EmployeeController implements Initializable {
     @FXML
     void editOnAction(ActionEvent event) {
 
-        EmployeeTm selectedItem = table.getSelectionModel().getSelectedItem();
+        EmployeeTM selectedItem = table.getSelectionModel().getSelectedItem();
 
         if (selectedItem == null) {
             return;
         } else {
 
             try {
-                FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/AddNewEmployee.fxml"));
+                FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/AddNewEmployee.fxml"));
                 Parent root = fxmlLoader.load();
                 AddNewEmployeeController addNewEmployeeController = fxmlLoader.getController();
                 addNewEmployeeController.setSelectedItemData(selectedItem);
@@ -203,7 +194,7 @@ public class EmployeeController implements Initializable {
     @FXML
     void getSelectedRow(MouseEvent event) {
 
-        EmployeeTm selectedItem = table.getSelectionModel().getSelectedItem();
+        EmployeeTM selectedItem = table.getSelectionModel().getSelectedItem();
 
     }
 
@@ -214,7 +205,7 @@ public class EmployeeController implements Initializable {
         String input = addressTxt.getText();
 
         try {
-            addresses = employeeModel.getEmployeeAddresses(input);
+            addresses = employeeBO.getAllEmployeeAddresses(input);
             addressList.setItems(addresses);
         } catch (SQLException | ClassNotFoundException e) {
             e.printStackTrace();
@@ -227,6 +218,7 @@ public class EmployeeController implements Initializable {
         }
 
     }
+
 
     @FXML
     public void addressTxtOnMouseClicked(MouseEvent event) {
@@ -243,7 +235,7 @@ public class EmployeeController implements Initializable {
         String input = nameTxt.getText();
 
         try {
-            names = employeeModel.getEmployeeNames(input);
+            names = employeeBO.getEmployeeNames(input);
             nameList.setItems(names);
         } catch (SQLException | ClassNotFoundException e) {
             e.printStackTrace();
@@ -294,7 +286,7 @@ public class EmployeeController implements Initializable {
     @FXML
     void searchOnAction(ActionEvent event) {
 
-        ObservableList<EmployeeTm> searchedEmployees = FXCollections.observableArrayList();
+        ObservableList<EmployeeTM> searchedEmployees = FXCollections.observableArrayList();
 
         String selectedEmployeeId = employeeIdCmb.getValue();
         String selectedName = nameTxt.getText();
@@ -308,7 +300,7 @@ public class EmployeeController implements Initializable {
 
         if (employeeIdSelected) {
 
-            ObservableList<EmployeeTm> employeesById = getEmployeeById(selectedEmployeeId);
+            ObservableList<EmployeeTM> employeesById = getEmployeeById(selectedEmployeeId);
 
             if (employeesById.isEmpty()) {
                 table.setItems(employeesById);
@@ -316,19 +308,19 @@ public class EmployeeController implements Initializable {
                 searchedEmployees.addAll(employeesById);
 
                 if (nameSelected) {
-                    ObservableList<EmployeeTm> filteredByName = filterEmployeesByName(searchedEmployees, selectedName);
+                    ObservableList<EmployeeTM> filteredByName = filterEmployeesByName(searchedEmployees, selectedName);
                     searchedEmployees.clear();
                     searchedEmployees.addAll(filteredByName);
                 }
 
                 if (addressSelected) {
-                    ObservableList<EmployeeTm> filteredByAddress = filterEmployeesByAddress(searchedEmployees, selectedAddress);
+                    ObservableList<EmployeeTM> filteredByAddress = filterEmployeesByAddress(searchedEmployees, selectedAddress);
                     searchedEmployees.clear();
                     searchedEmployees.addAll(filteredByAddress);
                 }
 
                 if (positionSelected) {
-                    ObservableList<EmployeeTm> filteredByPosition = filterEmployeesByPosition(searchedEmployees, selectedPosition);
+                    ObservableList<EmployeeTM> filteredByPosition = filterEmployeesByPosition(searchedEmployees, selectedPosition);
                     searchedEmployees.clear();
                     searchedEmployees.addAll(filteredByPosition);
                 }
@@ -338,7 +330,7 @@ public class EmployeeController implements Initializable {
 
         } else if (nameSelected || addressSelected || positionSelected) {
 
-            ObservableList<EmployeeTm> allEmployees = tableData;
+            ObservableList<EmployeeTM> allEmployees = tableData;
             searchedEmployees.addAll(allEmployees);
 
             if (nameSelected) {
@@ -356,17 +348,17 @@ public class EmployeeController implements Initializable {
             table.setItems(searchedEmployees);
 
         } else {
-            ObservableList<EmployeeTm> allEmployees = tableData;
+            ObservableList<EmployeeTM> allEmployees = tableData;
             table.setItems(allEmployees);
         }
     }
 
 
 
-    public ObservableList<EmployeeTm> getEmployeeById(String employeeId) {
+    public ObservableList<EmployeeTM> getEmployeeById(String employeeId) {
 
-        ObservableList<EmployeeTm> filteredEmployees = FXCollections.observableArrayList();
-        for (EmployeeTm employee : tableData) {
+        ObservableList<EmployeeTM> filteredEmployees = FXCollections.observableArrayList();
+        for (EmployeeTM employee : tableData) {
             if (employee.getEmployeeId().equals(employeeId)) {
                 filteredEmployees.add(employee);
             }
@@ -375,10 +367,10 @@ public class EmployeeController implements Initializable {
     }
 
 
-    public ObservableList<EmployeeTm> filterEmployeesByName(ObservableList<EmployeeTm> employees, String name) {
+    public ObservableList<EmployeeTM> filterEmployeesByName(ObservableList<EmployeeTM> employees, String name) {
 
-        ObservableList<EmployeeTm> filteredEmployees = FXCollections.observableArrayList();
-        for (EmployeeTm employee : employees) {
+        ObservableList<EmployeeTM> filteredEmployees = FXCollections.observableArrayList();
+        for (EmployeeTM employee : employees) {
             if (employee.getName().equalsIgnoreCase(name)) {
                 filteredEmployees.add(employee);
             }
@@ -387,10 +379,10 @@ public class EmployeeController implements Initializable {
     }
 
 
-    public ObservableList<EmployeeTm> filterEmployeesByAddress(ObservableList<EmployeeTm> employees, String address) {
+    public ObservableList<EmployeeTM> filterEmployeesByAddress(ObservableList<EmployeeTM> employees, String address) {
 
-        ObservableList<EmployeeTm> filteredEmployees = FXCollections.observableArrayList();
-        for (EmployeeTm employee : employees) {
+        ObservableList<EmployeeTM> filteredEmployees = FXCollections.observableArrayList();
+        for (EmployeeTM employee : employees) {
             if (employee.getAddress().equalsIgnoreCase(address)) {
                 filteredEmployees.add(employee);
             }
@@ -399,10 +391,10 @@ public class EmployeeController implements Initializable {
     }
 
 
-    public ObservableList<EmployeeTm> filterEmployeesByPosition(ObservableList<EmployeeTm> employees, String position) {
+    public ObservableList<EmployeeTM> filterEmployeesByPosition(ObservableList<EmployeeTM> employees, String position) {
 
-        ObservableList<EmployeeTm> filteredEmployees = FXCollections.observableArrayList();
-        for (EmployeeTm employee : employees) {
+        ObservableList<EmployeeTM> filteredEmployees = FXCollections.observableArrayList();
+        for (EmployeeTM employee : employees) {
             if (employee.getPosition().equalsIgnoreCase(position)) {
                 filteredEmployees.add(employee);
             }
@@ -416,7 +408,7 @@ public class EmployeeController implements Initializable {
     void sortCmbOnAction(ActionEvent event) {
 
         String sortType = sortCmb.getSelectionModel().getSelectedItem();
-        ObservableList<EmployeeTm> employeeTms = tableData;
+        ObservableList<EmployeeTM> employeeTMS = tableData;
 
         if(sortType==null){
             return;
@@ -424,150 +416,150 @@ public class EmployeeController implements Initializable {
 
         if(sortType.equals("Employee ID (Ascending)")){
 
-            for(int j = 0; j < employeeTms.size(); j++) {
-                for (int i = 0; i < employeeTms.size()-1; i++) {
-                    if (employeeTms.get(i).getEmployeeId().compareTo(employeeTms.get(i + 1).getEmployeeId())>0) {
-                        EmployeeTm temp = employeeTms.get(i);
-                        employeeTms.set(i, employeeTms.get(i + 1));
-                        employeeTms.set((i + 1), temp);
+            for(int j = 0; j < employeeTMS.size(); j++) {
+                for (int i = 0; i < employeeTMS.size()-1; i++) {
+                    if (employeeTMS.get(i).getEmployeeId().compareTo(employeeTMS.get(i + 1).getEmployeeId())>0) {
+                        EmployeeTM temp = employeeTMS.get(i);
+                        employeeTMS.set(i, employeeTMS.get(i + 1));
+                        employeeTMS.set((i + 1), temp);
 
                     }
                 }
             }
-            table.setItems(employeeTms);
+            table.setItems(employeeTMS);
         }
         else if(sortType.equals("Employee ID (Descending)")){
 
-            for(int j = 0; j < employeeTms.size(); j++) {
-                for (int i = 0; i < employeeTms.size()-1; i++) {
-                    if (employeeTms.get(i).getEmployeeId().compareTo(employeeTms.get(i + 1).getEmployeeId())<0) {
-                        EmployeeTm temp = employeeTms.get(i);
-                        employeeTms.set(i, employeeTms.get(i + 1));
-                        employeeTms.set((i + 1), temp);
+            for(int j = 0; j < employeeTMS.size(); j++) {
+                for (int i = 0; i < employeeTMS.size()-1; i++) {
+                    if (employeeTMS.get(i).getEmployeeId().compareTo(employeeTMS.get(i + 1).getEmployeeId())<0) {
+                        EmployeeTM temp = employeeTMS.get(i);
+                        employeeTMS.set(i, employeeTMS.get(i + 1));
+                        employeeTMS.set((i + 1), temp);
 
                     }
                 }
             }
-            table.setItems(employeeTms);
+            table.setItems(employeeTMS);
         }
         else if(sortType.equals("Name (Ascending)")){
 
-            for(int j = 0; j < employeeTms.size(); j++) {
-                for (int i = 0; i < employeeTms.size()-1; i++) {
-                    if (employeeTms.get(i).getName().compareTo(employeeTms.get(i + 1).getName())>0) {
-                        EmployeeTm temp = employeeTms.get(i);
-                        employeeTms.set(i, employeeTms.get(i + 1));
-                        employeeTms.set((i + 1), temp);
+            for(int j = 0; j < employeeTMS.size(); j++) {
+                for (int i = 0; i < employeeTMS.size()-1; i++) {
+                    if (employeeTMS.get(i).getName().compareTo(employeeTMS.get(i + 1).getName())>0) {
+                        EmployeeTM temp = employeeTMS.get(i);
+                        employeeTMS.set(i, employeeTMS.get(i + 1));
+                        employeeTMS.set((i + 1), temp);
 
                     }
                 }
             }
-            table.setItems(employeeTms);
+            table.setItems(employeeTMS);
         }
         else if(sortType.equals("Name (Descending)")){
 
-            for(int j = 0; j < employeeTms.size(); j++) {
-                for (int i = 0; i < employeeTms.size()-1; i++) {
-                    if (employeeTms.get(i).getName().compareTo(employeeTms.get(i + 1).getName())<0) {
-                        EmployeeTm temp = employeeTms.get(i);
-                        employeeTms.set(i, employeeTms.get(i + 1));
-                        employeeTms.set((i + 1), temp);
+            for(int j = 0; j < employeeTMS.size(); j++) {
+                for (int i = 0; i < employeeTMS.size()-1; i++) {
+                    if (employeeTMS.get(i).getName().compareTo(employeeTMS.get(i + 1).getName())<0) {
+                        EmployeeTM temp = employeeTMS.get(i);
+                        employeeTMS.set(i, employeeTMS.get(i + 1));
+                        employeeTMS.set((i + 1), temp);
 
                     }
                 }
             }
-            table.setItems(employeeTms);
+            table.setItems(employeeTMS);
 
         }
 
         else if(sortType.equals("Date of Birth (Descending)")){
 
-            for(int j = 0; j < employeeTms.size(); j++) {
-                for (int i = 0; i < employeeTms.size()-1; i++) {
-                    if (employeeTms.get(i).getDob().compareTo(employeeTms.get(i + 1).getDob())<0) {
-                        EmployeeTm temp = employeeTms.get(i);
-                        employeeTms.set(i, employeeTms.get(i + 1));
-                        employeeTms.set((i + 1), temp);
+            for(int j = 0; j < employeeTMS.size(); j++) {
+                for (int i = 0; i < employeeTMS.size()-1; i++) {
+                    if (employeeTMS.get(i).getDob().compareTo(employeeTMS.get(i + 1).getDob())<0) {
+                        EmployeeTM temp = employeeTMS.get(i);
+                        employeeTMS.set(i, employeeTMS.get(i + 1));
+                        employeeTMS.set((i + 1), temp);
 
                     }
                 }
             }
-            table.setItems(employeeTms);
+            table.setItems(employeeTMS);
         }
 
         else if(sortType.equals("Date of Birth (Ascending)")){
 
-            for(int j = 0; j < employeeTms.size(); j++) {
-                for (int i = 0; i < employeeTms.size()-1; i++) {
-                    if (employeeTms.get(i).getDob().compareTo(employeeTms.get(i + 1).getDob())>0) {
-                        EmployeeTm temp = employeeTms.get(i);
-                        employeeTms.set(i, employeeTms.get(i + 1));
-                        employeeTms.set((i + 1), temp);
+            for(int j = 0; j < employeeTMS.size(); j++) {
+                for (int i = 0; i < employeeTMS.size()-1; i++) {
+                    if (employeeTMS.get(i).getDob().compareTo(employeeTMS.get(i + 1).getDob())>0) {
+                        EmployeeTM temp = employeeTMS.get(i);
+                        employeeTMS.set(i, employeeTMS.get(i + 1));
+                        employeeTMS.set((i + 1), temp);
 
                     }
                 }
             }
-            table.setItems(employeeTms);
+            table.setItems(employeeTMS);
 
         }
         else if(sortType.equals("Basic Salary (Ascending)")){
 
-            for(int j = 0; j < employeeTms.size(); j++) {
-                for (int i = 0; i < employeeTms.size()-1; i++) {
-                    if (employeeTms.get(i).getBasicSalary() > employeeTms.get(i + 1).getBasicSalary()) {
-                        EmployeeTm temp = employeeTms.get(i);
-                        employeeTms.set(i, employeeTms.get(i + 1));
-                        employeeTms.set((i + 1), temp);
+            for(int j = 0; j < employeeTMS.size(); j++) {
+                for (int i = 0; i < employeeTMS.size()-1; i++) {
+                    if (employeeTMS.get(i).getBasicSalary() > employeeTMS.get(i + 1).getBasicSalary()) {
+                        EmployeeTM temp = employeeTMS.get(i);
+                        employeeTMS.set(i, employeeTMS.get(i + 1));
+                        employeeTMS.set((i + 1), temp);
 
                     }
                 }
             }
-            table.setItems(employeeTms);
+            table.setItems(employeeTMS);
         }
 
         else if(sortType.equals("Basic Salary (Descending)")){
 
-            for(int j = 0; j < employeeTms.size(); j++) {
-                for (int i = 0; i < employeeTms.size()-1; i++) {
-                    if (employeeTms.get(i).getBasicSalary() < employeeTms.get(i + 1).getBasicSalary()) {
-                        EmployeeTm temp = employeeTms.get(i);
-                        employeeTms.set(i, employeeTms.get(i + 1));
-                        employeeTms.set((i + 1), temp);
+            for(int j = 0; j < employeeTMS.size(); j++) {
+                for (int i = 0; i < employeeTMS.size()-1; i++) {
+                    if (employeeTMS.get(i).getBasicSalary() < employeeTMS.get(i + 1).getBasicSalary()) {
+                        EmployeeTM temp = employeeTMS.get(i);
+                        employeeTMS.set(i, employeeTMS.get(i + 1));
+                        employeeTMS.set((i + 1), temp);
 
                     }
                 }
             }
-            table.setItems(employeeTms);
+            table.setItems(employeeTMS);
         }
 
         else if(sortType.equals("Allowance (Ascending)")){
 
-            for(int j = 0; j < employeeTms.size(); j++) {
-                for (int i = 0; i < employeeTms.size()-1; i++) {
-                    if (employeeTms.get(i).getAllowances() > employeeTms.get(i + 1).getAllowances()) {
-                        EmployeeTm temp = employeeTms.get(i);
-                        employeeTms.set(i, employeeTms.get(i + 1));
-                        employeeTms.set((i + 1), temp);
+            for(int j = 0; j < employeeTMS.size(); j++) {
+                for (int i = 0; i < employeeTMS.size()-1; i++) {
+                    if (employeeTMS.get(i).getAllowances() > employeeTMS.get(i + 1).getAllowances()) {
+                        EmployeeTM temp = employeeTMS.get(i);
+                        employeeTMS.set(i, employeeTMS.get(i + 1));
+                        employeeTMS.set((i + 1), temp);
 
                     }
                 }
             }
-            table.setItems(employeeTms);
+            table.setItems(employeeTMS);
         }
 
         else if(sortType.equals("Allowance (Descending)")){
 
-            for(int j = 0; j < employeeTms.size(); j++) {
-                for (int i = 0; i < employeeTms.size()-1; i++) {
-                    if (employeeTms.get(i).getAllowances() < employeeTms.get(i + 1).getAllowances()) {
-                        EmployeeTm temp = employeeTms.get(i);
-                        employeeTms.set(i, employeeTms.get(i + 1));
-                        employeeTms.set((i + 1), temp);
+            for(int j = 0; j < employeeTMS.size(); j++) {
+                for (int i = 0; i < employeeTMS.size()-1; i++) {
+                    if (employeeTMS.get(i).getAllowances() < employeeTMS.get(i + 1).getAllowances()) {
+                        EmployeeTM temp = employeeTMS.get(i);
+                        employeeTMS.set(i, employeeTMS.get(i + 1));
+                        employeeTMS.set((i + 1), temp);
 
                     }
                 }
             }
-            table.setItems(employeeTms);
+            table.setItems(employeeTMS);
         }
     }
 
@@ -581,13 +573,13 @@ public class EmployeeController implements Initializable {
             return;
         }
 
-        ObservableList<EmployeeTm> employeeTms = FXCollections.observableArrayList();
+        ObservableList<EmployeeTM> employeeTMS = FXCollections.observableArrayList();
 
         for (int i=0; i<value; i++){
-            employeeTms.add(tableData.get(i));
+            employeeTMS.add(tableData.get(i));
         }
 
-        table.setItems(employeeTms);
+        table.setItems(employeeTMS);
 
     }
 
@@ -608,7 +600,7 @@ public class EmployeeController implements Initializable {
 
     public void tableSearch() {
 
-        FilteredList<EmployeeTm> filteredData = new FilteredList<>(tableData, b -> true);
+        FilteredList<EmployeeTM> filteredData = new FilteredList<>(tableData, b -> true);
 
         searchTxt.textProperty().addListener((observable, oldValue, newValue) -> {
             filteredData.setPredicate(employee -> {
@@ -639,7 +631,7 @@ public class EmployeeController implements Initializable {
             });
         });
 
-        SortedList<EmployeeTm> sortedData = new SortedList<>(filteredData);
+        SortedList<EmployeeTM> sortedData = new SortedList<>(filteredData);
 
         sortedData.comparatorProperty().bind(table.comparatorProperty());
 
@@ -664,9 +656,14 @@ public class EmployeeController implements Initializable {
     public void loadTable(){
 
         try {
-            tableData = employeeModel.getAllEmployees();
+            ObservableList<EmployeeDTO> employeeDTOS = employeeBO.getAll();
+            ObservableList<EmployeeTM> employeeTMS = FXCollections.observableArrayList();
+            for(EmployeeDTO x : employeeDTOS){
+                employeeTMS.add(new EmployeeTM().toTM(x));
+            }
+            tableData = employeeTMS;
             table.setItems(tableData);
-        } catch (SQLException e) {
+        } catch (SQLException |ClassNotFoundException e) {
             e.printStackTrace();
             System.err.println("Error while loading table data: " + e.getMessage());
             notification("An error occurred while loading table data. Please try again or contact support.");
@@ -678,7 +675,7 @@ public class EmployeeController implements Initializable {
     public void setEmployeeIdCmbValues(){
 
         try {
-            ObservableList<String> employeeIds = employeeModel.getAllEmployeesId();
+            ObservableList<String> employeeIds = employeeBO.getAllIds();
             employeeIdCmb.setItems(employeeIds);
             employeeIdCmb.getSelectionModel().selectFirst();
         }
@@ -694,7 +691,7 @@ public class EmployeeController implements Initializable {
     public void setPositionCmbValues(){
 
         try {
-            ObservableList<String> allDistinctPositions = employeeModel.getAllDistinctPositions();
+            ObservableList<String> allDistinctPositions = employeeBO.getAllDistinctPositions();
             positionCmb.setItems(allDistinctPositions);
             positionCmb.getSelectionModel().selectFirst();
 
@@ -712,7 +709,7 @@ public class EmployeeController implements Initializable {
         ObservableList<Integer> rows = FXCollections.observableArrayList();
         int count = 0;
 
-        for (EmployeeTm x : tableData){
+        for (EmployeeTM x : tableData){
             count++;
             rows.add(count);
 

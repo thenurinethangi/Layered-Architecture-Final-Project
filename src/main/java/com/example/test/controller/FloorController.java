@@ -1,9 +1,11 @@
 package com.example.test.controller;
 
-import com.example.test.dto.FloorDto;
-import com.example.test.dto.tm.FloorTm;
-import com.example.test.model.FloorModel;
-import com.example.test.validation.UserInputValidation;
+import com.example.test.bo.BOFactory;
+import com.example.test.bo.custom.FloorBO;
+import com.example.test.dto.FloorDTO;
+import com.example.test.dto.UnitDTO;
+import com.example.test.view.tdm.FloorTM;
+import com.example.test.UserInputValidation;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -31,13 +33,13 @@ public class FloorController implements Initializable {
     private Button editbtn;
 
     @FXML
-    private TableView<FloorTm> table;
+    private TableView<FloorTM> table;
 
     @FXML
-    private TableColumn<FloorTm, Integer> floorNo;
+    private TableColumn<FloorTM, Integer> floorNo;
 
     @FXML
-    private TableColumn<FloorTm, Integer> noOfHouses;
+    private TableColumn<FloorTM, Integer> noOfHouses;
 
     @FXML
     private Button deletebtn;
@@ -75,8 +77,8 @@ public class FloorController implements Initializable {
     @FXML
     private Label floorLable;
 
-    private FloorModel floorModel;
-    private ObservableList<FloorTm> tableData;
+    private FloorBO floorBO = (FloorBO) BOFactory.getInstance().getBO(BOFactory.BOType.FLOOR);
+    private ObservableList<FloorTM> tableData;
     private ObservableList<String> floorNumbers;
     private ObservableList<String> houseAmountPerFloor;
     private ObservableList<String> sortType;
@@ -85,15 +87,6 @@ public class FloorController implements Initializable {
     private String houseAmount;
 
 
-    public FloorController(){
-
-        try {
-            floorModel = new FloorModel();
-        }
-        catch (Exception e){
-            e.printStackTrace();
-        }
-    }
 
     @FXML
     void addOnAction(ActionEvent event) {
@@ -102,7 +95,6 @@ public class FloorController implements Initializable {
         String unitAmount = noOfHousestxt.getText();
 
         if(floor.isEmpty() || unitAmount.isEmpty()){
-
             notification("You should enter all the details of the new floor to add to the system");
         }
         else {
@@ -123,22 +115,22 @@ public class FloorController implements Initializable {
             }
             else{
 
-                FloorDto floorDto = new FloorDto(Integer.parseInt(floor),Integer.parseInt(unitAmount));
+                FloorDTO floorDto = new FloorDTO(Integer.parseInt(floor),Integer.parseInt(unitAmount));
 
                 try {
-                    String result = floorModel.saveNewFloor(floorDto);
+                    String result = floorBO.add(floorDto);
                     notification(result);
-                } catch (SQLException e) {
+                } catch (SQLException | ClassNotFoundException e) {
                     e.printStackTrace();
                     System.err.println("Error while saving new floor: " + e.getMessage());
                     notification("An error occurred while saving the new floor. Please try again or contact support.");
                 }
                 clean();
             }
-
         }
 
     }
+
 
     @FXML
     void clearOnAction(ActionEvent event) {
@@ -151,14 +143,16 @@ public class FloorController implements Initializable {
     @FXML
     void deleteOnAction(ActionEvent event) {
 
-        FloorTm floorData = table.getSelectionModel().getSelectedItem();
+        FloorTM floorData = table.getSelectionModel().getSelectedItem();
 
         if(floorData==null){
             return;
         }
 
         try {
-            boolean isUsed = floorModel.checkThisFloorIsUsed(floorData);
+            UnitDTO unitDTO = new UnitDTO();
+            unitDTO.setFloorNo(floorData.getFloorNo());
+            boolean isUsed = floorBO.checkFloorIsUsed(unitDTO);
 
             if(isUsed){
                 notification("Unable to delete the selected floor number "+floorData.getFloorNo()+", as it is currently in use");
@@ -184,7 +178,7 @@ public class FloorController implements Initializable {
             if(options.isPresent() && options.get()==yesButton){
 
                 try {
-                    String response = floorModel.deleteFloor(floorData);
+                    String response = floorBO.delete(new FloorDTO(floorData.getFloorNo(),floorData.getNoOfHouses()));
                     notification(response);
                 }
                 catch (Exception e){
@@ -205,7 +199,7 @@ public class FloorController implements Initializable {
     @FXML
     void editOnAction(ActionEvent event) {
 
-        FloorTm floorTm = table.getSelectionModel().getSelectedItem();
+        FloorTM floorTm = table.getSelectionModel().getSelectedItem();
 
         if(floorTm==null){
             return;
@@ -213,7 +207,7 @@ public class FloorController implements Initializable {
 
         else{
             try {
-                FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/FloorEdit.fxml"));
+                FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/FloorEdit.fxml"));
                 Parent root = fxmlLoader.load();
 
                 FloorEditController floorEditController = fxmlLoader.getController();
@@ -245,12 +239,12 @@ public class FloorController implements Initializable {
     @FXML
     void searchOnAction(ActionEvent event) {
 
-        ObservableList<FloorTm> filteredList = FXCollections.observableArrayList();
+        ObservableList<FloorTM> filteredList = FXCollections.observableArrayList();
 
         boolean isFloorSelected = (floor != null && !floor.equals("Select"));
         boolean isHouseAmountSelected = (houseAmount != null && !houseAmount.equals("Select"));
 
-        for (FloorTm floorTm : tableData) {
+        for (FloorTM floorTm : tableData) {
             boolean matchesFloor = !isFloorSelected || floor.equals(String.valueOf(floorTm.getFloorNo()));
             boolean matchesHouseAmount = !isHouseAmountSelected || houseAmount.equals(String.valueOf(floorTm.getNoOfHouses()));
 
@@ -298,18 +292,18 @@ public class FloorController implements Initializable {
          return;
         }
 
-        ObservableList<FloorTm> floorTms = FXCollections.observableArrayList();
+        ObservableList<FloorTM> floorTMS = FXCollections.observableArrayList();
         int count = 0;
 
-        for(FloorTm x : tableData){
+        for(FloorTM x : tableData){
             if(rows==count){
                break;
             }
             count++;
-            floorTms.add(x);
+            floorTMS.add(x);
         }
 
-        table.setItems(floorTms);
+        table.setItems(floorTMS);
     }
 
 
@@ -324,12 +318,12 @@ public class FloorController implements Initializable {
 
         if(text.equals("Retrieve by floor number (ascending)")){
 
-            ObservableList<FloorTm> floorTmsAr = tableData;
+            ObservableList<FloorTM> floorTmsAr = tableData;
 
             for(int j = 0; j < floorTmsAr.size(); j++) {
                 for (int i = 0; i < floorTmsAr.size()-1; i++) {
                     if (floorTmsAr.get(i).getFloorNo() > floorTmsAr.get(i + 1).getFloorNo()) {
-                        FloorTm temp = floorTmsAr.get(i);
+                        FloorTM temp = floorTmsAr.get(i);
                         floorTmsAr.set(i, floorTmsAr.get(i + 1));
                         floorTmsAr.set((i + 1), temp);
 
@@ -340,12 +334,12 @@ public class FloorController implements Initializable {
         }
         else if(text.equals("Retrieve by floor number (descending)")){
 
-            ObservableList<FloorTm> floorTmsAr = tableData;
+            ObservableList<FloorTM> floorTmsAr = tableData;
 
             for(int j = 0; j < floorTmsAr.size(); j++) {
                 for (int i = 0; i < floorTmsAr.size()-1; i++) {
                     if (floorTmsAr.get(i).getFloorNo() < floorTmsAr.get(i + 1).getFloorNo()) {
-                        FloorTm temp = floorTmsAr.get(i);
+                        FloorTM temp = floorTmsAr.get(i);
                         floorTmsAr.set(i, floorTmsAr.get(i + 1));
                         floorTmsAr.set((i + 1), temp);
 
@@ -356,12 +350,12 @@ public class FloorController implements Initializable {
         }
         else if(text.equals("Retrieve by house amount (ascending)")){
 
-            ObservableList<FloorTm> floorTmsAr = tableData;
+            ObservableList<FloorTM> floorTmsAr = tableData;
 
             for(int j = 0; j < floorTmsAr.size(); j++) {
                 for (int i = 0; i < floorTmsAr.size()-1; i++) {
                     if (floorTmsAr.get(i).getNoOfHouses() > floorTmsAr.get(i + 1).getNoOfHouses()) {
-                        FloorTm temp = floorTmsAr.get(i);
+                        FloorTM temp = floorTmsAr.get(i);
                         floorTmsAr.set(i, floorTmsAr.get(i + 1));
                         floorTmsAr.set((i + 1), temp);
 
@@ -372,12 +366,12 @@ public class FloorController implements Initializable {
         }
         else if(text.equals("Retrieve by house amount (descending)")){
 
-            ObservableList<FloorTm> floorTmsAr = tableData;
+            ObservableList<FloorTM> floorTmsAr = tableData;
 
             for(int j = 0; j < floorTmsAr.size(); j++) {
                 for (int i = 0; i < floorTmsAr.size()-1; i++) {
                     if (floorTmsAr.get(i).getNoOfHouses() < floorTmsAr.get(i + 1).getNoOfHouses()) {
-                        FloorTm temp = floorTmsAr.get(i);
+                        FloorTM temp = floorTmsAr.get(i);
                         floorTmsAr.set(i, floorTmsAr.get(i + 1));
                         floorTmsAr.set((i + 1), temp);
 
@@ -408,7 +402,7 @@ public class FloorController implements Initializable {
 
         rows = FXCollections.observableArrayList();
         int count = 0;
-        for(FloorTm x : tableData){
+        for(FloorTM x : tableData){
             count++;
             rows.add(count);
         }
@@ -440,25 +434,28 @@ public class FloorController implements Initializable {
     public void tableLoad(){
 
         try {
-            tableData = floorModel.loadTableData();
+            ObservableList<FloorDTO> floorDTOS = floorBO.getAll();
+            ObservableList<FloorTM> floorTMS = FXCollections.observableArrayList();
+            for(FloorDTO x : floorDTOS){
+                floorTMS.add(new FloorTM(x.getFloorNo(),x.getNoOfHouses()));
+            }
+            tableData = floorTMS;
             table.setItems(tableData);
-        } catch (SQLException e) {
+        } catch (SQLException | ClassNotFoundException e) {
             e.printStackTrace();
             System.err.println("Error while loading the table data: " + e.getMessage());
             notification("An error while loading the table data, Please try again or contact support.");
         }
-
-
     }
 
 
     public void setFloorNoCmbValues(){
 
         try {
-            floorNumbers = floorModel.getFloorNumbers();
+            floorNumbers = floorBO.getIds();
             floorNoCmb.setItems(floorNumbers);
             floorNoCmb.getSelectionModel().selectFirst();
-        } catch (SQLException e) {
+        } catch (SQLException |ClassNotFoundException e) {
             e.printStackTrace();
             System.err.println("Error while loading the floor numbers: " + e.getMessage());
             notification("An error while loading the floor numbers. Please try again or contact support.");

@@ -1,8 +1,13 @@
 package com.example.test.controller;
 
-import com.example.test.dto.tm.PaymentTm;
-import com.example.test.dto.tm.TenantTm;
-import com.example.test.model.PaymentModel;
+import com.example.test.bo.BOFactory;
+import com.example.test.bo.custom.PaymentBO;
+import com.example.test.dto.HouseInspectDTO;
+import com.example.test.dto.PaymentDTO;
+import com.example.test.dto.TenantDTO;
+import com.example.test.entity.Tenant;
+import com.example.test.view.tdm.PaymentTM;
+import com.example.test.dao.custom.impl.PaymentDAOImpl;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -42,25 +47,25 @@ public class PaymentController implements Initializable {
     private Button editbtn;
 
     @FXML
-    private TableView<PaymentTm> table;
+    private TableView<PaymentTM> table;
 
     @FXML
-    private TableColumn<PaymentTm, String> invoiceNoColumn;
+    private TableColumn<PaymentTM, String> invoiceNoColumn;
 
     @FXML
-    private TableColumn<PaymentTm, Double> amountColumn;
+    private TableColumn<PaymentTM, Double> amountColumn;
 
     @FXML
-    private TableColumn<PaymentTm, String> dateColumn;
+    private TableColumn<PaymentTM, String> dateColumn;
 
     @FXML
-    private TableColumn<PaymentTm, String> paymentTypeColumn;
+    private TableColumn<PaymentTM, String> paymentTypeColumn;
 
     @FXML
-    private TableColumn<PaymentTm, String> tenantIdColumn;
+    private TableColumn<PaymentTM, String> tenantIdColumn;
 
     @FXML
-    private TableColumn<PaymentTm, String> actionColumn;
+    private TableColumn<PaymentTM, String> actionColumn;
 
     @FXML
     private Button addNewPaymentBtn;
@@ -98,8 +103,8 @@ public class PaymentController implements Initializable {
     @FXML
     private TextField searchTxt;
 
-    private final PaymentModel paymentModel = new PaymentModel();
-    private ObservableList<PaymentTm> tableData;
+    private PaymentBO paymentBO = (PaymentBO) BOFactory.getInstance().getBO(BOFactory.BOType.PAYMENT);
+    private ObservableList<PaymentTM> tableData;
     private ObservableList<String> invoices;
 
 
@@ -107,7 +112,7 @@ public class PaymentController implements Initializable {
     void addNewPaymentOnAction(ActionEvent event) {
 
         try{
-            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/AddNewPayment.fxml"));
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/AddNewPayment.fxml"));
             Parent root = fxmlLoader.load();
             Scene scene = new Scene(root);
             Stage stage = new Stage();
@@ -138,7 +143,7 @@ public class PaymentController implements Initializable {
 
 
         try {
-            invoices = paymentModel.getInvoiceNoSuggestions(input);
+            invoices = paymentBO.getInvoiceNoSuggestions(input);
             invoiceNoList.setItems(invoices);
         }
         catch (SQLException | ClassNotFoundException e) {
@@ -163,7 +168,7 @@ public class PaymentController implements Initializable {
     @FXML
     void searchOnAction(ActionEvent event) {
 
-        ObservableList<PaymentTm> searchedPayments = FXCollections.observableArrayList();
+        ObservableList<PaymentTM> searchedPayments = FXCollections.observableArrayList();
 
         String selectedTenantId = tenantIdCmb.getValue();
         String selectedInvoiceNo = invoiceNoTxt.getText();
@@ -177,7 +182,7 @@ public class PaymentController implements Initializable {
 
 
         if (tenantIdSelected) {
-            ObservableList<PaymentTm> paymentsByTenantId = getPaymentsByTenantId(selectedTenantId);
+            ObservableList<PaymentTM> paymentsByTenantId = getPaymentsByTenantId(selectedTenantId);
 
             if (paymentsByTenantId.isEmpty()) {
                 table.setItems(paymentsByTenantId);
@@ -185,19 +190,19 @@ public class PaymentController implements Initializable {
                 searchedPayments.addAll(paymentsByTenantId);
 
                 if (invoiceNoSelected) {
-                    ObservableList<PaymentTm> filteredByInvoiceNo = filterPaymentsByInvoiceNo(searchedPayments, selectedInvoiceNo);
+                    ObservableList<PaymentTM> filteredByInvoiceNo = filterPaymentsByInvoiceNo(searchedPayments, selectedInvoiceNo);
                     searchedPayments.clear();
                     searchedPayments.addAll(filteredByInvoiceNo);
                 }
 
                 if (paymentTypeSelected) {
-                    ObservableList<PaymentTm> filteredByPaymentType = filterPaymentsByPaymentType(searchedPayments, selectedPaymentType);
+                    ObservableList<PaymentTM> filteredByPaymentType = filterPaymentsByPaymentType(searchedPayments, selectedPaymentType);
                     searchedPayments.clear();
                     searchedPayments.addAll(filteredByPaymentType);
                 }
 
                 if (dateSelected) {
-                    ObservableList<PaymentTm> filteredByDate = filterPaymentsByDate(searchedPayments, selectedDate);
+                    ObservableList<PaymentTM> filteredByDate = filterPaymentsByDate(searchedPayments, selectedDate);
                     searchedPayments.clear();
                     searchedPayments.addAll(filteredByDate);
                 }
@@ -207,7 +212,7 @@ public class PaymentController implements Initializable {
 
         }
         else if (invoiceNoSelected || paymentTypeSelected || dateSelected) {
-            ObservableList<PaymentTm> allPayments = tableData;
+            ObservableList<PaymentTM> allPayments = tableData;
             searchedPayments.addAll(allPayments);
 
             if (invoiceNoSelected) {
@@ -225,14 +230,14 @@ public class PaymentController implements Initializable {
             table.setItems(searchedPayments);
 
         } else {
-            ObservableList<PaymentTm> allPayments = tableData;
+            ObservableList<PaymentTM> allPayments = tableData;
             table.setItems(allPayments);
         }
     }
 
 
 
-    private ObservableList<PaymentTm> getPaymentsByTenantId(String tenantId) {
+    private ObservableList<PaymentTM> getPaymentsByTenantId(String tenantId) {
         return FXCollections.observableArrayList(
                 tableData.stream()
                         .filter(payment -> payment.getTenantId() != null && payment.getTenantId().equalsIgnoreCase(tenantId))
@@ -241,7 +246,7 @@ public class PaymentController implements Initializable {
     }
 
 
-    private ObservableList<PaymentTm> filterPaymentsByInvoiceNo(ObservableList<PaymentTm> payments, String invoiceNo) {
+    private ObservableList<PaymentTM> filterPaymentsByInvoiceNo(ObservableList<PaymentTM> payments, String invoiceNo) {
         return FXCollections.observableArrayList(
                 payments.stream()
                         .filter(payment -> payment.getInvoiceNo().equalsIgnoreCase(invoiceNo))
@@ -250,7 +255,7 @@ public class PaymentController implements Initializable {
     }
 
 
-    private ObservableList<PaymentTm> filterPaymentsByPaymentType(ObservableList<PaymentTm> payments, String paymentType) {
+    private ObservableList<PaymentTM> filterPaymentsByPaymentType(ObservableList<PaymentTM> payments, String paymentType) {
         return FXCollections.observableArrayList(
                 payments.stream()
                         .filter(payment -> payment.getPaymentType().equalsIgnoreCase(paymentType))
@@ -259,7 +264,7 @@ public class PaymentController implements Initializable {
     }
 
 
-    private ObservableList<PaymentTm> filterPaymentsByDate(ObservableList<PaymentTm> payments, String date) {
+    private ObservableList<PaymentTM> filterPaymentsByDate(ObservableList<PaymentTM> payments, String date) {
         return FXCollections.observableArrayList(
                 payments.stream()
                         .filter(payment -> payment.getDate().toString().equals(date))
@@ -273,45 +278,45 @@ public class PaymentController implements Initializable {
 
 
         String sortType = sortCmb.getSelectionModel().getSelectedItem();
-        ObservableList<PaymentTm> paymentTms = FXCollections.observableArrayList(tableData);
+        ObservableList<PaymentTM> paymentTMS = FXCollections.observableArrayList(tableData);
 
         if (sortType == null) {
             return;
         }
 
-        Comparator<PaymentTm> comparator = null;
+        Comparator<PaymentTM> comparator = null;
 
         switch (sortType) {
             case "Invoice No (Ascending)":
-                comparator = Comparator.comparing(PaymentTm::getInvoiceNo);
+                comparator = Comparator.comparing(PaymentTM::getInvoiceNo);
                 break;
 
             case "Invoice No (Descending)":
-                comparator = Comparator.comparing(PaymentTm::getInvoiceNo).reversed();
+                comparator = Comparator.comparing(PaymentTM::getInvoiceNo).reversed();
                 break;
 
             case "Amount (Ascending)":
-                comparator = Comparator.comparing(PaymentTm::getAmount);
+                comparator = Comparator.comparing(PaymentTM::getAmount);
                 break;
 
             case "Amount (Descending)":
-                comparator = Comparator.comparing(PaymentTm::getAmount).reversed();
+                comparator = Comparator.comparing(PaymentTM::getAmount).reversed();
                 break;
 
             case "Date (Ascending)":
-                comparator = Comparator.comparing(PaymentTm::getDate);
+                comparator = Comparator.comparing(PaymentTM::getDate);
                 break;
 
             case "Date (Descending)":
-                comparator = Comparator.comparing(PaymentTm::getDate).reversed();
+                comparator = Comparator.comparing(PaymentTM::getDate).reversed();
                 break;
 
             case "Tenant ID (Ascending)":
-                comparator = Comparator.comparing(PaymentTm::getTenantId);
+                comparator = Comparator.comparing(PaymentTM::getTenantId);
                 break;
 
             case "Tenant ID (Descending)":
-                comparator = Comparator.comparing(PaymentTm::getTenantId).reversed();
+                comparator = Comparator.comparing(PaymentTM::getTenantId).reversed();
                 break;
 
             default:
@@ -319,8 +324,8 @@ public class PaymentController implements Initializable {
         }
 
         if (comparator != null) {
-            FXCollections.sort(paymentTms, comparator);
-            table.setItems(paymentTms);
+            FXCollections.sort(paymentTMS, comparator);
+            table.setItems(paymentTMS);
         }
     }
 
@@ -334,13 +339,13 @@ public class PaymentController implements Initializable {
             return;
         }
 
-        ObservableList<PaymentTm> paymentTms = FXCollections.observableArrayList();
+        ObservableList<PaymentTM> paymentTMS = FXCollections.observableArrayList();
 
         for (int i=0; i<value; i++){
-            paymentTms.add(tableData.get(i));
+            paymentTMS.add(tableData.get(i));
         }
 
-        table.setItems(paymentTms);
+        table.setItems(paymentTMS);
 
     }
 
@@ -362,7 +367,7 @@ public class PaymentController implements Initializable {
 
     public void tableSearch() {
 
-        FilteredList<PaymentTm> filteredData = new FilteredList<>(tableData, b -> true);
+        FilteredList<PaymentTM> filteredData = new FilteredList<>(tableData, b -> true);
 
         searchTxt.textProperty().addListener((observable, oldValue, newValue) -> {
             filteredData.setPredicate(payment -> {
@@ -387,7 +392,7 @@ public class PaymentController implements Initializable {
             });
         });
 
-        SortedList<PaymentTm> sortedData = new SortedList<>(filteredData);
+        SortedList<PaymentTM> sortedData = new SortedList<>(filteredData);
         sortedData.comparatorProperty().bind(table.comparatorProperty());
         table.setItems(sortedData);
     }
@@ -399,9 +404,9 @@ public class PaymentController implements Initializable {
         ObservableList<String> tenantIds = FXCollections.observableArrayList();
         tenantIds.add("Select");
         try {
-            ObservableList<TenantTm> allTenants = paymentModel.getAllTenantIds();
+            ObservableList<TenantDTO> allTenants = paymentBO.getAllTenantIds();
 
-            for (TenantTm x: allTenants){
+            for (TenantDTO x: allTenants){
                 tenantIds.add(x.getTenantId());
             }
         } catch (SQLException | ClassNotFoundException e) {
@@ -421,7 +426,7 @@ public class PaymentController implements Initializable {
         ObservableList<Integer> rows = FXCollections.observableArrayList();
         int count = 0;
 
-        for (PaymentTm x : tableData){
+        for (PaymentTM x : tableData){
             count++;
             rows.add(count);
 
@@ -462,9 +467,9 @@ public class PaymentController implements Initializable {
 
     public void setTableColumnsValue(){
 
-        Callback<TableColumn<PaymentTm, String>, TableCell<PaymentTm, String>> cellFoctory = (TableColumn<PaymentTm, String> param) -> {
+        Callback<TableColumn<PaymentTM, String>, TableCell<PaymentTM, String>> cellFoctory = (TableColumn<PaymentTM, String> param) -> {
 
-            final TableCell<PaymentTm, String> cell = new TableCell<PaymentTm, String>() {
+            final TableCell<PaymentTM, String> cell = new TableCell<PaymentTM, String>() {
                 @Override
                 public void updateItem(String item, boolean empty) {
                     super.updateItem(item, empty);
@@ -474,8 +479,8 @@ public class PaymentController implements Initializable {
                         setText(null);
 
                     } else {
-                        Image image1 = new Image("C:\\Users\\Laptop World\\IdeaProjects\\test\\src\\main\\resources\\image\\email (2).png");
-                        Image image2 = new Image("C:\\Users\\Laptop World\\IdeaProjects\\test\\src\\main\\resources\\image\\bin.png");
+                        Image image1 = new Image("C:\\Users\\PCWORLD\\IdeaProjects\\Semester_final\\src\\main\\resources\\assets\\image\\email (2).png");
+                        Image image2 = new Image("C:\\Users\\PCWORLD\\IdeaProjects\\Semester_final\\src\\main\\resources\\assets\\image\\bin.png");
 
 
                         ImageView mail = new ImageView();
@@ -494,12 +499,12 @@ public class PaymentController implements Initializable {
 
                         mail.setOnMouseClicked((MouseEvent event) -> {
 
-                            PaymentTm selectedPayment = table.getSelectionModel().getSelectedItem();
+                            PaymentTM selectedPayment = table.getSelectionModel().getSelectedItem();
 
                             System.out.println("mail");
 
                             try{
-                            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/MailSendFormInLeaseAgreement.fxml"));
+                            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/MailSendFormInLeaseAgreement.fxml"));
                             Parent root = fxmlLoader.load();
                             MailSendFormInLeaseAgreementController mailSendFormInLeaseAgreementController = fxmlLoader.getController();
                             mailSendFormInLeaseAgreementController.setPaymentDetailsToSendMail(selectedPayment);
@@ -523,38 +528,42 @@ public class PaymentController implements Initializable {
 
                         delete.setOnMouseClicked((MouseEvent event) -> {
 
-                            PaymentTm selectedPayment = table.getSelectionModel().getSelectedItem();
+                            PaymentTM selectedPayment = table.getSelectionModel().getSelectedItem();
 
                             try {
-                                boolean result = paymentModel.checkIfThisPaymentIsFirstPaymentOrNot(selectedPayment);
+                                boolean result = paymentBO.checkIfThisPaymentIsFirstPaymentOrNot(new PaymentDTO().toDTO(selectedPayment));
                                 if (result) {
                                     notification("This is First Made Payment Upon Renting Or Buying, Can't Delete");
                                     System.out.println("First payment");
                                     return;
-                                } else {
-
-                                    Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-                                    alert.setTitle("Confirmation Dialog");
-                                    alert.setHeaderText("Please Confirm First");
-                                    alert.setContentText("Are you sure you want to delete this selected payment?");
-
-                                    ButtonType buttonYes = new ButtonType("Yes");
-                                    ButtonType buttonCancel = new ButtonType("Cancel");
-
-                                    alert.getButtonTypes().setAll(buttonYes, buttonCancel);
-
-                                    Optional<ButtonType> res = alert.showAndWait();
-
-                                    if (res.isPresent() && res.get() == buttonYes) {
-
-                                            String response = paymentModel.deletePayment(selectedPayment);
-                                            notification(response);
-                                            loadTable();
-
-                                    } else {
-                                        table.getSelectionModel().clearSelection();
-                                    }
                                 }
+                                if(selectedPayment.getPaymentType().equals("Property Damage Charges")){
+                                    notification("This Payment Can't Delete");
+                                    return;
+                                }
+
+                                Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+                                alert.setTitle("Confirmation Dialog");
+                                alert.setHeaderText("Please Confirm First");
+                                alert.setContentText("Are you sure you want to delete this selected payment?");
+
+                                ButtonType buttonYes = new ButtonType("Yes");
+                                ButtonType buttonCancel = new ButtonType("Cancel");
+
+                                alert.getButtonTypes().setAll(buttonYes, buttonCancel);
+
+                                Optional<ButtonType> res = alert.showAndWait();
+
+                                if (res.isPresent() && res.get() == buttonYes) {
+
+                                    String response = paymentBO.delete(new PaymentDTO().toDTO(selectedPayment));
+                                    notification(response);
+                                    loadTable();
+
+                                } else {
+                                    table.getSelectionModel().clearSelection();
+                                }
+
                             }catch (SQLException | ClassNotFoundException e) {
                                 e.printStackTrace();
                                 System.err.println("Error while deleting the payment: " + e.getMessage());
@@ -592,7 +601,13 @@ public class PaymentController implements Initializable {
     public void loadTable(){
 
         try {
-            tableData = paymentModel.getAllPayments();
+            ObservableList<PaymentDTO> paymentDTOS = paymentBO.getAll();
+            ObservableList<PaymentTM> paymentTMS = FXCollections.observableArrayList();
+
+            for(PaymentDTO x : paymentDTOS){
+                paymentTMS.add(new PaymentTM().toTM(x));
+            }
+            tableData = paymentTMS;
             table.setItems(tableData);
 
         } catch (SQLException | ClassNotFoundException e) {

@@ -1,8 +1,11 @@
 package com.example.test.controller;
 
-import com.example.test.dto.TenantDto;
-import com.example.test.dto.tm.HouseStatusCheckTm;
-import com.example.test.model.TenantModel;
+import com.example.test.bo.BOFactory;
+import com.example.test.bo.custom.TenantBO;
+import com.example.test.dto.TenantDTO;
+import com.example.test.entity.Tenant;
+import com.example.test.view.tdm.HouseInspectTM;
+import com.example.test.dao.custom.impl.TenantDAOImpl;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
@@ -42,12 +45,15 @@ public class SendMailController {
     @FXML
     private Button sendBtn;
 
-    private final TenantModel tenantModel = new TenantModel();
-    private HouseStatusCheckTm selectedHouseStatusCheckToSendMail;
-    private TenantDto tenant;
+    private final TenantBO tenantBO = (TenantBO) BOFactory.getInstance().getBO(BOFactory.BOType.TENANT);
+    private HouseInspectTM selectedHouseStatusCheckToSendMail;
+    private TenantDTO tenant;
+
+
 
     @FXML
     void exitOnMouseClick(MouseEvent event) {
+
         Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
         stage.close();
     }
@@ -116,12 +122,12 @@ public class SendMailController {
         }
     }
 
-    public void prepareMail(HouseStatusCheckTm selectedHouseCheck) {
+    public void prepareMail(HouseInspectTM selectedHouseCheck) {
 
         selectedHouseStatusCheckToSendMail = selectedHouseCheck;
 
         try {
-            tenant = tenantModel.getMoreTenantDetails(selectedHouseCheck.getTenantId());
+            tenant = tenantBO.search(selectedHouseCheck.getTenantId());
             receiverEmailAddress.setText(tenant.getEmail());
         } catch (SQLException | ClassNotFoundException e) {
             throw new RuntimeException(e);

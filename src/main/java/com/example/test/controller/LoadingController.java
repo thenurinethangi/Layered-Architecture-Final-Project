@@ -43,7 +43,7 @@ public class LoadingController implements Initializable {
     public void tapOnAction(ActionEvent event) throws IOException {
 
         try {
-            fxmlLoader = new FXMLLoader(getClass().getResource("/view/SignIn.fxml"));
+            fxmlLoader = new FXMLLoader(getClass().getResource("/SignIn.fxml"));
             root = fxmlLoader.load();
             scene = new Scene(root);
             stage = (Stage) ((Node) event.getSource()).getScene().getWindow();

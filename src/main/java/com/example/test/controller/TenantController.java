@@ -1,10 +1,11 @@
 package com.example.test.controller;
 
+import com.example.test.bo.BOFactory;
+import com.example.test.bo.custom.TenantBO;
 import com.example.test.db.DBConnection;
-import com.example.test.dto.tm.CustomerTm;
-import com.example.test.dto.tm.RequestTm;
-import com.example.test.dto.tm.TenantTm;
-import com.example.test.model.TenantModel;
+import com.example.test.dto.TenantDTO;
+import com.example.test.view.tdm.TenantTM;
+import com.example.test.dao.custom.impl.TenantDAOImpl;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -36,7 +37,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
@@ -48,34 +48,34 @@ public class TenantController implements Initializable {
     private Button editbtn;
 
     @FXML
-    private TableView<TenantTm> table;
+    private TableView<TenantTM> table;
 
     @FXML
-    private TableColumn<TenantTm, String> tenantIdColumn;
+    private TableColumn<TenantTM, String> tenantIdColumn;
 
     @FXML
-    private TableColumn<TenantTm, String> nameColumn;
+    private TableColumn<TenantTM, String> nameColumn;
 
     @FXML
-    private TableColumn<TenantTm, String> phoneNoColumn;
+    private TableColumn<TenantTM, String> phoneNoColumn;
 
     @FXML
-    private TableColumn<TenantTm, Integer> membersCountColumn;
+    private TableColumn<TenantTM, Integer> membersCountColumn;
 
     @FXML
-    private TableColumn<TenantTm, String> startDateColumn;
+    private TableColumn<TenantTM, String> startDateColumn;
 
     @FXML
-    private TableColumn<TenantTm, Double> monthlyRentColumn;
+    private TableColumn<TenantTM, Double> monthlyRentColumn;
 
     @FXML
-    private TableColumn<TenantTm, String> lastPaidMonthColumn;
+    private TableColumn<TenantTM, String> lastPaidMonthColumn;
 
     @FXML
-    private TableColumn<TenantTm, String> houseIdColumn;
+    private TableColumn<TenantTM, String> houseIdColumn;
 
     @FXML
-    private TableColumn<TenantTm, String> actionColumn;
+    private TableColumn<TenantTM, String> actionColumn;
 
     @FXML
     private ComboBox<Integer> tableRowsCmb;
@@ -113,10 +113,9 @@ public class TenantController implements Initializable {
     @FXML
     private TextField searchTxt;
 
-    private final TenantModel tenantModel = new TenantModel();
-    private ObservableList<TenantTm> tableData;
+    private final TenantBO tenantBO = (TenantBO) BOFactory.getInstance().getBO(BOFactory.BOType.TENANT);
+    private ObservableList<TenantTM> tableData;
     private ObservableList<String> names = FXCollections.observableArrayList();
-
 
 
     @FXML
@@ -126,7 +125,7 @@ public class TenantController implements Initializable {
 
 
         try {
-            names = tenantModel.getNameSuggestions(input);
+            names = tenantBO.getNameSuggestions(input);
             nameList.setItems(names);
         }
         catch (SQLException | ClassNotFoundException e) {
@@ -159,7 +158,7 @@ public class TenantController implements Initializable {
     @FXML
     void searchOnAction(ActionEvent event) {
 
-        ObservableList<TenantTm> searchedTenants = FXCollections.observableArrayList();
+        ObservableList<TenantTM> searchedTenants = FXCollections.observableArrayList();
 
         String selectedTenantId = tenantIdCmb.getValue();
         String selectedName = nameTxt.getText();
@@ -175,7 +174,7 @@ public class TenantController implements Initializable {
 
 
         if (tenantIdSelected) {
-            ObservableList<TenantTm> tenantsById = getTenantById(selectedTenantId);
+            ObservableList<TenantTM> tenantsById = getTenantById(selectedTenantId);
 
             if (tenantsById.isEmpty()) {
                 table.setItems(tenantsById);
@@ -183,25 +182,25 @@ public class TenantController implements Initializable {
                 searchedTenants.addAll(tenantsById);
 
                 if (nameSelected) {
-                    ObservableList<TenantTm> filteredByName = filterTenantsByName(searchedTenants, selectedName);
+                    ObservableList<TenantTM> filteredByName = filterTenantsByName(searchedTenants, selectedName);
                     searchedTenants.clear();
                     searchedTenants.addAll(filteredByName);
                 }
 
                 if (membersCountSelected) {
-                    ObservableList<TenantTm> filteredByMembersCount = filterTenantsByMembersCount(searchedTenants, selectedMembersCount);
+                    ObservableList<TenantTM> filteredByMembersCount = filterTenantsByMembersCount(searchedTenants, selectedMembersCount);
                     searchedTenants.clear();
                     searchedTenants.addAll(filteredByMembersCount);
                 }
 
                 if (lastPaymentMonthSelected) {
-                    ObservableList<TenantTm> filteredByLastPaymentMonth = filterTenantsByLastPaymentMonth(searchedTenants, selectedLastPaymentMonth);
+                    ObservableList<TenantTM> filteredByLastPaymentMonth = filterTenantsByLastPaymentMonth(searchedTenants, selectedLastPaymentMonth);
                     searchedTenants.clear();
                     searchedTenants.addAll(filteredByLastPaymentMonth);
                 }
 
                 if (houseIdSelected) {
-                    ObservableList<TenantTm> filteredByHouseId = filterTenantsByHouseId(searchedTenants, selectedHouseId);
+                    ObservableList<TenantTM> filteredByHouseId = filterTenantsByHouseId(searchedTenants, selectedHouseId);
                     searchedTenants.clear();
                     searchedTenants.addAll(filteredByHouseId);
                 }
@@ -211,7 +210,7 @@ public class TenantController implements Initializable {
 
 
         } else if (nameSelected || membersCountSelected || lastPaymentMonthSelected || houseIdSelected) {
-            ObservableList<TenantTm> allTenants = tableData;
+            ObservableList<TenantTM> allTenants = tableData;
             searchedTenants.addAll(allTenants);
 
             if (nameSelected) {
@@ -233,13 +232,13 @@ public class TenantController implements Initializable {
             table.setItems(searchedTenants);
 
         } else {
-            ObservableList<TenantTm> allTenants = tableData;
+            ObservableList<TenantTM> allTenants = tableData;
             table.setItems(allTenants);
         }
     }
 
 
-    private ObservableList<TenantTm> getTenantById(String tenantId) {
+    private ObservableList<TenantTM> getTenantById(String tenantId) {
         return FXCollections.observableArrayList(
                 tableData.stream()
                         .filter(tenant -> tenant.getTenantId().equalsIgnoreCase(tenantId))
@@ -248,7 +247,7 @@ public class TenantController implements Initializable {
     }
 
 
-    private ObservableList<TenantTm> filterTenantsByName(ObservableList<TenantTm> tenants, String name) {
+    private ObservableList<TenantTM> filterTenantsByName(ObservableList<TenantTM> tenants, String name) {
         return FXCollections.observableArrayList(
                 tenants.stream()
                         .filter(tenant -> tenant.getName().toLowerCase().contains(name.toLowerCase()))
@@ -256,7 +255,7 @@ public class TenantController implements Initializable {
         );
     }
 
-    private ObservableList<TenantTm> filterTenantsByMembersCount(ObservableList<TenantTm> tenants, String membersCount) {
+    private ObservableList<TenantTM> filterTenantsByMembersCount(ObservableList<TenantTM> tenants, String membersCount) {
         int count = Integer.parseInt(membersCount);
         return FXCollections.observableArrayList(
                 tenants.stream()
@@ -265,7 +264,7 @@ public class TenantController implements Initializable {
         );
     }
 
-    private ObservableList<TenantTm> filterTenantsByLastPaymentMonth(ObservableList<TenantTm> tenants, String lastPaymentMonth) {
+    private ObservableList<TenantTM> filterTenantsByLastPaymentMonth(ObservableList<TenantTM> tenants, String lastPaymentMonth) {
         return FXCollections.observableArrayList(
                 tenants.stream()
                         .filter(tenant -> tenant.getLastPaidMonth().equalsIgnoreCase(lastPaymentMonth))
@@ -273,7 +272,7 @@ public class TenantController implements Initializable {
         );
     }
 
-    private ObservableList<TenantTm> filterTenantsByHouseId(ObservableList<TenantTm> tenants, String houseId) {
+    private ObservableList<TenantTM> filterTenantsByHouseId(ObservableList<TenantTM> tenants, String houseId) {
         return FXCollections.observableArrayList(
                 tenants.stream()
                         .filter(tenant -> tenant.getHouseId().equalsIgnoreCase(houseId))
@@ -287,53 +286,53 @@ public class TenantController implements Initializable {
     void sortCmbOnAction(ActionEvent event) {
 
         String sortType = sortCmb.getSelectionModel().getSelectedItem();
-        ObservableList<TenantTm> tenantTms = FXCollections.observableArrayList(tableData);
+        ObservableList<TenantTM> tenantTMS = FXCollections.observableArrayList(tableData);
 
         if (sortType == null) {
             return;
         }
 
-        Comparator<TenantTm> comparator = null;
+        Comparator<TenantTM> comparator = null;
 
         switch (sortType) {
             case "Tenant ID (Ascending)":
-                comparator = Comparator.comparing(TenantTm::getTenantId);
+                comparator = Comparator.comparing(TenantTM::getTenantId);
                 break;
 
             case "Tenant ID (Descending)":
-                comparator = Comparator.comparing(TenantTm::getTenantId).reversed();
+                comparator = Comparator.comparing(TenantTM::getTenantId).reversed();
                 break;
 
             case "Tenant Name (Ascending)":
-                comparator = Comparator.comparing(TenantTm::getName);
+                comparator = Comparator.comparing(TenantTM::getName);
                 break;
 
             case "Tenant Name (Descending)":
-                comparator = Comparator.comparing(TenantTm::getName).reversed();
+                comparator = Comparator.comparing(TenantTM::getName).reversed();
                 break;
 
             case "Resident Count (Ascending)":
-                comparator = Comparator.comparing(TenantTm::getMembersCount);
+                comparator = Comparator.comparing(TenantTM::getMembersCount);
                 break;
 
             case "Resident Count (Descending)":
-                comparator = Comparator.comparing(TenantTm::getMembersCount).reversed();
+                comparator = Comparator.comparing(TenantTM::getMembersCount).reversed();
                 break;
 
             case "Rent Start Date (Ascending)":
-                comparator = Comparator.comparing(TenantTm::getRentStartDate);
+                comparator = Comparator.comparing(TenantTM::getRentStartDate);
                 break;
 
             case "Rent Start Date (Descending)":
-                comparator = Comparator.comparing(TenantTm::getRentStartDate).reversed();
+                comparator = Comparator.comparing(TenantTM::getRentStartDate).reversed();
                 break;
 
             case "Rent For Month (Ascending)":
-                comparator = Comparator.comparing(TenantTm::getMonthlyRent);
+                comparator = Comparator.comparing(TenantTM::getMonthlyRent);
                 break;
 
             case "Rent For Month (Descending)":
-                comparator = Comparator.comparing(TenantTm::getMonthlyRent).reversed();
+                comparator = Comparator.comparing(TenantTM::getMonthlyRent).reversed();
                 break;
 
             default:
@@ -341,8 +340,8 @@ public class TenantController implements Initializable {
         }
 
         if (comparator != null) {
-            FXCollections.sort(tenantTms, comparator);
-            table.setItems(tenantTms);
+            FXCollections.sort(tenantTMS, comparator);
+            table.setItems(tenantTMS);
         }
 
     }
@@ -357,13 +356,13 @@ public class TenantController implements Initializable {
             return;
         }
 
-        ObservableList<TenantTm> tenantTms = FXCollections.observableArrayList();
+        ObservableList<TenantTM> tenantTMS = FXCollections.observableArrayList();
 
         for (int i=0; i<value; i++){
-            tenantTms.add(tableData.get(i));
+            tenantTMS.add(tableData.get(i));
         }
 
-        table.setItems(tenantTms);
+        table.setItems(tenantTMS);
 
     }
 
@@ -385,7 +384,7 @@ public class TenantController implements Initializable {
 
     public void tableSearch() {
 
-        FilteredList<TenantTm> filteredData = new FilteredList<>(tableData, b -> true);
+        FilteredList<TenantTM> filteredData = new FilteredList<>(tableData, b -> true);
 
         searchTxt.textProperty().addListener((observable, oldValue, newValue) -> {
             filteredData.setPredicate(tenant -> {
@@ -417,7 +416,7 @@ public class TenantController implements Initializable {
             });
         });
 
-        SortedList<TenantTm> sortedData = new SortedList<>(filteredData);
+        SortedList<TenantTM> sortedData = new SortedList<>(filteredData);
 
         sortedData.comparatorProperty().bind(table.comparatorProperty());
 
@@ -437,7 +436,7 @@ public class TenantController implements Initializable {
     public void setHouseIdCmbValues(){
 
         try {
-            ObservableList<String> houseIds = tenantModel.getHouseIds();
+            ObservableList<String> houseIds = tenantBO.getHouseIds();
             houseIdCmb.setItems(houseIds);
             houseIdCmb.getSelectionModel().selectFirst();
 
@@ -465,7 +464,7 @@ public class TenantController implements Initializable {
         ObservableList<String> tenantIds = FXCollections.observableArrayList();
         tenantIds.add("Select");
 
-        for(TenantTm x : tableData){
+        for(TenantTM x : tableData){
           tenantIds.add(x.getTenantId());
         }
 
@@ -479,7 +478,7 @@ public class TenantController implements Initializable {
         ObservableList<Integer> rows = FXCollections.observableArrayList();
         int count = 0;
 
-        for (TenantTm x : tableData){
+        for (TenantTM x : tableData){
             count++;
             rows.add(count);
 
@@ -501,9 +500,9 @@ public class TenantController implements Initializable {
         houseIdColumn.setCellValueFactory(new PropertyValueFactory<>("houseId"));
 
 
-        Callback<TableColumn<TenantTm, String>, TableCell<TenantTm, String>> cellFoctory = (TableColumn<TenantTm, String> param) -> {
+        Callback<TableColumn<TenantTM, String>, TableCell<TenantTM, String>> cellFoctory = (TableColumn<TenantTM, String> param) -> {
 
-            final TableCell<TenantTm, String> cell = new TableCell<TenantTm, String>() {
+            final TableCell<TenantTM, String> cell = new TableCell<TenantTM, String>() {
                 @Override
                 public void updateItem(String item, boolean empty) {
                     super.updateItem(item, empty);
@@ -513,9 +512,9 @@ public class TenantController implements Initializable {
                         setText(null);
 
                     } else {
-                        Image image1 = new Image("C:\\Users\\Laptop World\\IdeaProjects\\test\\src\\main\\resources\\image\\visibility.png");
-                        Image image2 = new Image("C:\\Users\\Laptop World\\IdeaProjects\\test\\src\\main\\resources\\image\\editText.png");
-                        Image image3 = new Image("C:\\Users\\Laptop World\\IdeaProjects\\test\\src\\main\\resources\\image\\accounting (3).png");
+                        Image image1 = new Image("C:\\Users\\PCWORLD\\IdeaProjects\\Semester_final\\src\\main\\resources\\assets\\image\\visibility.png");
+                        Image image2 = new Image("C:\\Users\\PCWORLD\\IdeaProjects\\Semester_final\\src\\main\\resources\\assets\\image\\editText.png");
+                        Image image3 = new Image("C:\\Users\\PCWORLD\\IdeaProjects\\Semester_final\\src\\main\\resources\\assets\\image\\accounting (3).png");
 
                         ImageView viewDetails = new ImageView();
                         viewDetails.setImage(image1);
@@ -540,10 +539,10 @@ public class TenantController implements Initializable {
 
                         viewDetails.setOnMouseClicked((MouseEvent event) -> {
 
-                            TenantTm SelectedTenant = table.getSelectionModel().getSelectedItem();
+                            TenantTM SelectedTenant = table.getSelectionModel().getSelectedItem();
 
                             try {
-                                FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/TenantDetails.fxml"));
+                                FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/TenantDetails.fxml"));
                                 Parent root = fxmlLoader.load();
                                 TenantDetailsController tenantDetailsController = fxmlLoader.getController();
                                 tenantDetailsController.setSelectedTenantDetails(SelectedTenant);
@@ -562,10 +561,10 @@ public class TenantController implements Initializable {
 
                         edit.setOnMouseClicked((MouseEvent event) -> {
 
-                            TenantTm SelectedTenant = table.getSelectionModel().getSelectedItem();
+                            TenantTM SelectedTenant = table.getSelectionModel().getSelectedItem();
 
                             try {
-                                FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/EditTenant.fxml"));
+                                FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/EditTenant.fxml"));
                                 Parent root = fxmlLoader.load();
                                 TenantEditController tenantEditController = fxmlLoader.getController();
                                 tenantEditController.setSelectedTenantDetails(SelectedTenant);
@@ -585,7 +584,7 @@ public class TenantController implements Initializable {
 
                         paymentHistory.setOnMouseClicked((MouseEvent event) -> {
 
-                            TenantTm tenant = table.getSelectionModel().getSelectedItem();
+                            TenantTM tenant = table.getSelectionModel().getSelectedItem();
 
                             if (tenant == null) {
                                 return;
@@ -593,7 +592,7 @@ public class TenantController implements Initializable {
 
                             try {
                                 JasperReport jasperReport = (JasperReport) JRLoader.loadObject(
-                                        getClass().getResourceAsStream("/Report/Tenant_Payment_Report(1).jasper")
+                                        getClass().getResourceAsStream("/assets/Report/Tenant_Payment_Report(1).jasper")
                                 );
 
                                 Connection connection = DBConnection.getInstance().getConnection();
@@ -657,7 +656,13 @@ public class TenantController implements Initializable {
     public void loadTable(){
 
         try {
-            tableData = tenantModel.getAllTenants();
+            ObservableList<TenantDTO> tenantDTOS = tenantBO.getAll();
+            ObservableList<TenantTM> tenantTMS = FXCollections.observableArrayList();
+
+            for(TenantDTO x : tenantDTOS){
+                tenantTMS.add(new TenantTM().toTM(x));
+            }
+            tableData = tenantTMS;
             table.setItems(tableData);
 
         } catch (SQLException | ClassNotFoundException e) {

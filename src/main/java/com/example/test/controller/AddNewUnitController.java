@@ -1,13 +1,16 @@
 package com.example.test.controller;
 
-import com.example.test.dto.UnitDto;
-import com.example.test.dto.tm.FloorTm;
-import com.example.test.dto.tm.HouseTypeTm;
-import com.example.test.dto.tm.UnitTm;
-import com.example.test.model.AddNewUnitModel;
-import com.example.test.model.FloorModel;
-import com.example.test.model.HouseTypeModel;
-import com.example.test.validation.UserInputValidation;
+import com.example.test.bo.BOFactory;
+import com.example.test.bo.custom.UnitBO;
+import com.example.test.dto.FloorDTO;
+import com.example.test.dto.HouseTypeDTO;
+import com.example.test.dto.UnitDTO;
+import com.example.test.entity.Floor;
+import com.example.test.entity.HouseType;
+import com.example.test.dao.custom.impl.FloorDAOImpl;
+import com.example.test.dao.custom.impl.HouseTypeDAOImpl;
+import com.example.test.UserInputValidation;
+import com.example.test.view.tdm.UnitTM;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -87,30 +90,13 @@ public class AddNewUnitController implements Initializable {
     private Label bathRoomNoErrorMsg;
 
     private String newHouseId;
-    private AddNewUnitModel addNewUnitModel;
-    private HouseTypeModel houseTypeModel;
-    private FloorModel floorModel;
+    private UnitBO unitBO = (UnitBO) BOFactory.getInstance().getBO(BOFactory.BOType.UNIT);
     private Integer floorNo;
     private String houseType;
     private String status;
     private String rentOrSell;
-    private UnitTm selectedUnit;
+    private UnitTM selectedUnitTM;
 
-    private static final Logger logger = LoggerFactory.getLogger(AddNewUnitController.class);
-
-    public AddNewUnitController(){
-
-        try{
-            floorModel = new FloorModel();
-            houseTypeModel = new HouseTypeModel();
-            addNewUnitModel = new AddNewUnitModel();
-        } catch (SQLException | ClassNotFoundException e) {
-            logger.error("Error while loading the Add New Unit page: {}", e.getMessage(), e);
-            System.err.println("Error while loading the Add New Unit page: " + e.getMessage());
-            notification("An error occurred while loading the Add New Unit page. Please try again or contact support.");
-        }
-
-    }
 
     @FXML
     void addOnAction(ActionEvent event) {
@@ -129,26 +115,26 @@ public class AddNewUnitController implements Initializable {
 
                     handleInputValidationErrors(bedrooms,bathroom,securityCharge,monthlyRent,null);
 
-                    UnitDto newUnit = new UnitDto();
-                    newUnit.setHouseId(id);
-                    newUnit.setBedroom(Integer.parseInt(bedrooms));
-                    newUnit.setBathroom(Integer.parseInt(bathroom));
-                    newUnit.setRentOrBuy(rentOrSell);
-                    newUnit.setTotalValue("N/A");
-                    newUnit.setSecurityCharge(securityCharge);
-                    newUnit.setMonthlyRent(monthlyRent);
-                    newUnit.setStatus(status);
-                    newUnit.setHouseType(houseType);
-                    newUnit.setFloorNo(floorNo);
+                    UnitDTO newUnitDTO = new UnitDTO();
+                    newUnitDTO.setHouseId(id);
+                    newUnitDTO.setBedroom(Integer.parseInt(bedrooms));
+                    newUnitDTO.setBathroom(Integer.parseInt(bathroom));
+                    newUnitDTO.setRentOrBuy(rentOrSell);
+                    newUnitDTO.setTotalValue("N/A");
+                    newUnitDTO.setSecurityCharge(securityCharge);
+                    newUnitDTO.setMonthlyRent(monthlyRent);
+                    newUnitDTO.setStatus(status);
+                    newUnitDTO.setHouseType(houseType);
+                    newUnitDTO.setFloorNo(floorNo);
 
                     try {
-                        String response = addNewUnitModel.addNewUnit(newUnit);//
+                        String response = unitBO.add(newUnitDTO);//
                         notification(response);
                         if(response.equals("successfully add new unit to the system")){
                             setNewHouseId();
                         }
                     }
-                    catch (SQLException e) {
+                    catch (SQLException |ClassNotFoundException e) {
                         e.printStackTrace();
                         System.err.println("Error while adding the new unit: " + e.getMessage());
                         notification("An error occurred while adding the new unit, Please try again or contact support.");
@@ -172,26 +158,26 @@ public class AddNewUnitController implements Initializable {
 
                     handleInputValidationErrors(bedrooms,bathroom,null,null,totalValue);
 
-                    UnitDto newUnit = new UnitDto();
-                    newUnit.setHouseId(id);
-                    newUnit.setBedroom(Integer.parseInt(bedrooms));
-                    newUnit.setBathroom(Integer.parseInt(bathroom));
-                    newUnit.setRentOrBuy(rentOrSell);
-                    newUnit.setTotalValue(totalValue);
-                    newUnit.setSecurityCharge("N/A");
-                    newUnit.setMonthlyRent("N/A");
-                    newUnit.setStatus(status);
-                    newUnit.setHouseType(houseType);
-                    newUnit.setFloorNo(floorNo);
+                    UnitDTO newUnitDTO = new UnitDTO();
+                    newUnitDTO.setHouseId(id);
+                    newUnitDTO.setBedroom(Integer.parseInt(bedrooms));
+                    newUnitDTO.setBathroom(Integer.parseInt(bathroom));
+                    newUnitDTO.setRentOrBuy(rentOrSell);
+                    newUnitDTO.setTotalValue(totalValue);
+                    newUnitDTO.setSecurityCharge("N/A");
+                    newUnitDTO.setMonthlyRent("N/A");
+                    newUnitDTO.setStatus(status);
+                    newUnitDTO.setHouseType(houseType);
+                    newUnitDTO.setFloorNo(floorNo);
 
                     try {
-                        String response = addNewUnitModel.addNewUnit(newUnit);
+                        String response = unitBO.add(newUnitDTO);
                         notification(response);
                         if(response.equals("successfully add new unit to the system")){
                             setNewHouseId();
                         }
                     }
-                    catch (SQLException e) {
+                    catch (SQLException |ClassNotFoundException e) {
                         e.printStackTrace();
                         System.err.println("Error while adding the new unit: " + e.getMessage());
                         notification("An error occurred while adding the new unit, Please try again or contact support.");
@@ -302,13 +288,13 @@ public class AddNewUnitController implements Initializable {
         ObservableList<Integer> floorNumbers = FXCollections.observableArrayList();
 
         try{
-            ObservableList<FloorTm> allFloors = floorModel.loadTableData();
-            for(FloorTm x : allFloors){
+            ObservableList<FloorDTO> allFloors = unitBO.getAllFloors();
+            for(FloorDTO x : allFloors){
                 floorNumbers.add(x.getFloorNo());
             }
 
         }
-        catch (SQLException e) {
+        catch (SQLException | ClassNotFoundException e) {
             e.printStackTrace();
             System.err.println("Error while setting the floor numbers: " + e.getMessage());
             notification("An error occurred while setting the floor numbers, Please try again or contact support.");
@@ -324,12 +310,12 @@ public class AddNewUnitController implements Initializable {
         ObservableList<String> houseType = FXCollections.observableArrayList();
 
         try{
-            ObservableList<HouseTypeTm> allHouseTypes = houseTypeModel.loadTableData();
-            for(HouseTypeTm x : allHouseTypes){
+            ObservableList<HouseTypeDTO> allHouseTypes = unitBO.getAllHouseTypes();
+            for(HouseTypeDTO x : allHouseTypes){
                 houseType.add(x.getHouseType());
             }
 
-        } catch (SQLException e) {
+        } catch (SQLException | ClassNotFoundException e) {
             e.printStackTrace();
             System.err.println("Error while setting the house types: " + e.getMessage());
             notification("An error occurred while setting the house types, Please try again or contact support.");
@@ -372,9 +358,9 @@ public class AddNewUnitController implements Initializable {
     public void setNewHouseId(){
 
         try {
-            newHouseId = addNewUnitModel.getNewHouseId();
+            newHouseId = unitBO.generateNewId();
             houseIdLable.setText(newHouseId);
-        } catch (SQLException e) {
+        } catch (SQLException |ClassNotFoundException e) {
             e.printStackTrace();
             System.err.println("Error while setting the house ids: " + e.getMessage());
             notification("An error occurred while setting the house ids, Please try again or contact support.");
@@ -383,28 +369,28 @@ public class AddNewUnitController implements Initializable {
 
     }
 
-    public void setEditRowDetails(UnitTm unitTm){
+    public void setEditRowDetails(com.example.test.view.tdm.UnitTM unitTM){
 
-        selectedUnit = unitTm;
+        selectedUnitTM = unitTM;
 
-        houseIdLable.setText(selectedUnit.getHouseId());
-        bedRoomtxt.setText(String.valueOf(selectedUnit.getBedroom()));
-        bathRoomtxt.setText(String.valueOf(selectedUnit.getBathroom()));
-        totalValuetxt.setText(selectedUnit.getTotalValue());
-        securityChargetxt.setText(selectedUnit.getSecurityCharge());
-        monthlyRenttxt.setText(selectedUnit.getMonthlyRent());
-        rentOrSellCmb.getSelectionModel().select(selectedUnit.getRentOrBuy());
-        statusCmb.getSelectionModel().select(selectedUnit.getStatus());
-        houseTypeCmb.getSelectionModel().select(selectedUnit.getHouseType());
-        floorNoCmb.getSelectionModel().select(selectedUnit.getFloorNo());
+        houseIdLable.setText(selectedUnitTM.getHouseId());
+        bedRoomtxt.setText(String.valueOf(selectedUnitTM.getBedroom()));
+        bathRoomtxt.setText(String.valueOf(selectedUnitTM.getBathroom()));
+        totalValuetxt.setText(selectedUnitTM.getTotalValue());
+        securityChargetxt.setText(selectedUnitTM.getSecurityCharge());
+        monthlyRenttxt.setText(selectedUnitTM.getMonthlyRent());
+        rentOrSellCmb.getSelectionModel().select(selectedUnitTM.getRentOrBuy());
+        statusCmb.getSelectionModel().select(selectedUnitTM.getStatus());
+        houseTypeCmb.getSelectionModel().select(selectedUnitTM.getHouseType());
+        floorNoCmb.getSelectionModel().select(selectedUnitTM.getFloorNo());
 
         addbtn.setDisable(true);
         editbtn.setDisable(false);
 
-        rentOrSell = selectedUnit.getRentOrBuy();
-        status = selectedUnit.getStatus();
-        houseType = selectedUnit.getHouseType();
-        floorNo = selectedUnit.getFloorNo();
+        rentOrSell = selectedUnitTM.getRentOrBuy();
+        status = selectedUnitTM.getStatus();
+        houseType = selectedUnitTM.getHouseType();
+        floorNo = selectedUnitTM.getFloorNo();
 
     }
 
@@ -426,31 +412,26 @@ public class AddNewUnitController implements Initializable {
 
                     handleInputValidationErrors(bedrooms,bathroom,securityCharge,monthlyRent,null);
 
-                    UnitDto newUnit = new UnitDto();
-                    newUnit.setHouseId(id);
-                    newUnit.setBedroom(Integer.parseInt(bedrooms));
-                    newUnit.setBathroom(Integer.parseInt(bathroom));
-                    newUnit.setRentOrBuy(rentOrSell);
-                    newUnit.setTotalValue("N/A");
-                    newUnit.setSecurityCharge(securityCharge);
-                    newUnit.setMonthlyRent(monthlyRent);
-                    newUnit.setStatus(status);
-                    newUnit.setHouseType(houseType);
-                    newUnit.setFloorNo(floorNo);
+                    UnitDTO newUnitDTO = new UnitDTO();
+                    newUnitDTO.setHouseId(id);
+                    newUnitDTO.setBedroom(Integer.parseInt(bedrooms));
+                    newUnitDTO.setBathroom(Integer.parseInt(bathroom));
+                    newUnitDTO.setRentOrBuy(rentOrSell);
+                    newUnitDTO.setTotalValue("N/A");
+                    newUnitDTO.setSecurityCharge(securityCharge);
+                    newUnitDTO.setMonthlyRent(monthlyRent);
+                    newUnitDTO.setStatus(status);
+                    newUnitDTO.setHouseType(houseType);
+                    newUnitDTO.setFloorNo(floorNo);
 
                     try {
-                        String response = addNewUnitModel.editUnit(newUnit);
+                        String response = unitBO.update(newUnitDTO);
                         notification(response);
-
-                        if(response.equals("successfully update the unit")){
-                            Stage stage = (Stage)((Node)event.getSource()).getScene().getWindow();
-                            stage.close();
-                        }
                     }
-                    catch (SQLException e) {
+                    catch (SQLException |ClassNotFoundException e) {
                         e.printStackTrace();
                         System.err.println("Error while updating the unit: " + e.getMessage());
-                        notification("An error occurred while updating the unit: "+newUnit.getHouseId()+", Please try again or contact support.");
+                        notification("An error occurred while updating the unit: "+ newUnitDTO.getHouseId()+", Please try again or contact support.");
                     }
                     clean();
                 }
@@ -471,30 +452,30 @@ public class AddNewUnitController implements Initializable {
 
                     handleInputValidationErrors(bedrooms,bathroom,null,null,totalValue);
 
-                    UnitDto newUnit = new UnitDto();
-                    newUnit.setHouseId(id);
-                    newUnit.setBedroom(Integer.parseInt(bedrooms));
-                    newUnit.setBathroom(Integer.parseInt(bathroom));
-                    newUnit.setRentOrBuy(rentOrSell);
-                    newUnit.setTotalValue(totalValue);
-                    newUnit.setSecurityCharge("N/A");
-                    newUnit.setMonthlyRent("N/A");
-                    newUnit.setStatus(status);
-                    newUnit.setHouseType(houseType);
-                    newUnit.setFloorNo(floorNo);
+                    UnitDTO newUnitDTO = new UnitDTO();
+                    newUnitDTO.setHouseId(id);
+                    newUnitDTO.setBedroom(Integer.parseInt(bedrooms));
+                    newUnitDTO.setBathroom(Integer.parseInt(bathroom));
+                    newUnitDTO.setRentOrBuy(rentOrSell);
+                    newUnitDTO.setTotalValue(totalValue);
+                    newUnitDTO.setSecurityCharge("N/A");
+                    newUnitDTO.setMonthlyRent("N/A");
+                    newUnitDTO.setStatus(status);
+                    newUnitDTO.setHouseType(houseType);
+                    newUnitDTO.setFloorNo(floorNo);
 
                     try {
-                        String response = addNewUnitModel.editUnit(newUnit);
+                        String response = unitBO.update(newUnitDTO);
                         notification(response);
 
                         if(response.equals("successfully update the unit")){
                             Stage stage = (Stage)((Node)event.getSource()).getScene().getWindow();
                             stage.close();
                         }
-                    } catch (SQLException e) {
+                    } catch (SQLException |ClassNotFoundException e) {
                         e.printStackTrace();
                         System.err.println("Error while updating the unit: " + e.getMessage());
-                        notification("An error occurred while updating the unit: "+newUnit.getHouseId()+", Please try again or contact support.");
+                        notification("An error occurred while updating the unit: "+ newUnitDTO.getHouseId()+", Please try again or contact support.");
                     }
 
                     clean();

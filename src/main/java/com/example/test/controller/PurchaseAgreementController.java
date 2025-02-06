@@ -1,10 +1,11 @@
 package com.example.test.controller;
 
-import com.example.test.dto.tm.LeaseAgreementTm;
-import com.example.test.dto.tm.OwnerTm;
-import com.example.test.dto.tm.PurchaseAgreementTm;
-import com.example.test.dto.tm.TenantTm;
-import com.example.test.model.PurchaseAgreementModel;
+import com.example.test.bo.BOFactory;
+import com.example.test.bo.custom.PurchaseAgreementBO;
+import com.example.test.dto.PurchaseAgreementDTO;
+import com.example.test.entity.PurchaseAgreement;
+import com.example.test.view.tdm.PurchaseAgreementTM;
+import com.example.test.dao.custom.impl.PurchaseAgreementDAOImpl;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -37,28 +38,28 @@ import java.util.ResourceBundle;
 public class PurchaseAgreementController implements Initializable {
 
     @FXML
-    private TableView<PurchaseAgreementTm> table;
+    private TableView<PurchaseAgreementTM> table;
 
     @FXML
-    private TableColumn<PurchaseAgreementTm, String> agreementColumn;
+    private TableColumn<PurchaseAgreementTM, String> agreementColumn;
 
     @FXML
-    private TableColumn<PurchaseAgreementTm, String> ownerIdColumn;
+    private TableColumn<PurchaseAgreementTM, String> ownerIdColumn;
 
     @FXML
-    private TableColumn<PurchaseAgreementTm, String> houseIdColumn;
+    private TableColumn<PurchaseAgreementTM, String> houseIdColumn;
 
     @FXML
-    private TableColumn<PurchaseAgreementTm, Double> purchasePriceColumn;
+    private TableColumn<PurchaseAgreementTM, Double> purchasePriceColumn;
 
     @FXML
-    private TableColumn<PurchaseAgreementTm, String> signedDateColumn;
+    private TableColumn<PurchaseAgreementTM, String> signedDateColumn;
 
     @FXML
-    private TableColumn<PurchaseAgreementTm, String> statusColumn;
+    private TableColumn<PurchaseAgreementTM, String> statusColumn;
 
     @FXML
-    private TableColumn<PurchaseAgreementTm, String> actionColumn;
+    private TableColumn<PurchaseAgreementTM, String> actionColumn;
 
     @FXML
     private ComboBox<Integer> tableRowsCmb;
@@ -85,9 +86,8 @@ public class PurchaseAgreementController implements Initializable {
     private TextField searchTxt;
 
 
-    private final PurchaseAgreementModel purchaseAgreementModel = new PurchaseAgreementModel();
-    private ObservableList<PurchaseAgreementTm> tableData;
-
+    private final PurchaseAgreementBO purchaseAgreementBO = (PurchaseAgreementBO) BOFactory.getInstance().getBO(BOFactory.BOType.PURCHASEAGREEMENT);
+    private ObservableList<PurchaseAgreementTM> tableData;
 
 
     @FXML
@@ -99,7 +99,7 @@ public class PurchaseAgreementController implements Initializable {
     @FXML
     void searchOnAction(ActionEvent event) {
 
-        ObservableList<PurchaseAgreementTm> searchedAgreements = FXCollections.observableArrayList();
+        ObservableList<PurchaseAgreementTM> searchedAgreements = FXCollections.observableArrayList();
 
         String selectedAgreementId = agreementIdCmb.getValue();
         String selectedOwnerId = ownerIdCmb.getValue();
@@ -111,7 +111,7 @@ public class PurchaseAgreementController implements Initializable {
 
         if (agreementIdSelected) {
 
-            ObservableList<PurchaseAgreementTm> agreementsById = getAgreementById(selectedAgreementId);
+            ObservableList<PurchaseAgreementTM> agreementsById = getAgreementById(selectedAgreementId);
 
             if (agreementsById.isEmpty()) {
                 table.setItems(agreementsById);
@@ -132,7 +132,7 @@ public class PurchaseAgreementController implements Initializable {
         }
         else if (ownerIdSelected || houseIdSelected) {
 
-            ObservableList<PurchaseAgreementTm> allAgreements = tableData;
+            ObservableList<PurchaseAgreementTM> allAgreements = tableData;
             searchedAgreements.addAll(allAgreements);
 
             if (ownerIdSelected) {
@@ -146,7 +146,7 @@ public class PurchaseAgreementController implements Initializable {
             table.setItems(searchedAgreements);
 
         } else {
-            ObservableList<PurchaseAgreementTm> allAgreements = tableData;
+            ObservableList<PurchaseAgreementTM> allAgreements = tableData;
             table.setItems(allAgreements);
         }
 
@@ -154,7 +154,7 @@ public class PurchaseAgreementController implements Initializable {
 
 
 
-    public ObservableList<PurchaseAgreementTm> getAgreementById(String agreementId) {
+    public ObservableList<PurchaseAgreementTM> getAgreementById(String agreementId) {
 
         return FXCollections.observableArrayList(
                 tableData.stream()
@@ -163,7 +163,7 @@ public class PurchaseAgreementController implements Initializable {
         );
     }
 
-    public ObservableList<PurchaseAgreementTm> filterAgreementsByOwnerId(ObservableList<PurchaseAgreementTm> agreements, String ownerId) {
+    public ObservableList<PurchaseAgreementTM> filterAgreementsByOwnerId(ObservableList<PurchaseAgreementTM> agreements, String ownerId) {
 
         return FXCollections.observableArrayList(
                 agreements.stream()
@@ -172,7 +172,7 @@ public class PurchaseAgreementController implements Initializable {
         );
     }
 
-    public ObservableList<PurchaseAgreementTm> filterAgreementsByHouseId(ObservableList<PurchaseAgreementTm> agreements, String houseId) {
+    public ObservableList<PurchaseAgreementTM> filterAgreementsByHouseId(ObservableList<PurchaseAgreementTM> agreements, String houseId) {
 
         return FXCollections.observableArrayList(
                 agreements.stream()
@@ -188,45 +188,45 @@ public class PurchaseAgreementController implements Initializable {
 
 
         String sortType = sortCmb.getSelectionModel().getSelectedItem();
-        ObservableList<PurchaseAgreementTm> purchaseAgreementTms = FXCollections.observableArrayList(tableData);
+        ObservableList<PurchaseAgreementTM> purchaseAgreementTMS = FXCollections.observableArrayList(tableData);
 
         if (sortType == null) {
             return;
         }
 
-        Comparator<PurchaseAgreementTm> comparator = null;
+        Comparator<PurchaseAgreementTM> comparator = null;
 
         switch (sortType) {
             case "Purchase Agreement ID (Ascending)":
-                comparator = Comparator.comparing(PurchaseAgreementTm::getPurchaseAgreementId);
+                comparator = Comparator.comparing(PurchaseAgreementTM::getPurchaseAgreementId);
                 break;
 
             case "Purchase Agreement ID (Descending)":
-                comparator = Comparator.comparing(PurchaseAgreementTm::getPurchaseAgreementId).reversed();
+                comparator = Comparator.comparing(PurchaseAgreementTM::getPurchaseAgreementId).reversed();
                 break;
 
             case "Owner ID (Ascending)":
-                comparator = Comparator.comparing(PurchaseAgreementTm::getHomeOwnerId);
+                comparator = Comparator.comparing(PurchaseAgreementTM::getHomeOwnerId);
                 break;
 
             case "Owner ID (Descending)":
-                comparator = Comparator.comparing(PurchaseAgreementTm::getHomeOwnerId).reversed();
+                comparator = Comparator.comparing(PurchaseAgreementTM::getHomeOwnerId).reversed();
                 break;
 
             case "Signed Date (Ascending)":
-                comparator = Comparator.comparing(PurchaseAgreementTm::getSignedDate);
+                comparator = Comparator.comparing(PurchaseAgreementTM::getSignedDate);
                 break;
 
             case "Signed Date (Descending)":
-                comparator = Comparator.comparing(PurchaseAgreementTm::getSignedDate).reversed();
+                comparator = Comparator.comparing(PurchaseAgreementTM::getSignedDate).reversed();
                 break;
 
             case "Purchase Price (Ascending)":
-                comparator = Comparator.comparing(PurchaseAgreementTm::getPurchasePrice);
+                comparator = Comparator.comparing(PurchaseAgreementTM::getPurchasePrice);
                 break;
 
             case "Purchase Price (Descending)":
-                comparator = Comparator.comparing(PurchaseAgreementTm::getPurchasePrice).reversed();
+                comparator = Comparator.comparing(PurchaseAgreementTM::getPurchasePrice).reversed();
                 break;
 
             default:
@@ -234,8 +234,8 @@ public class PurchaseAgreementController implements Initializable {
         }
 
         if (comparator != null) {
-            FXCollections.sort(purchaseAgreementTms, comparator);
-            table.setItems(purchaseAgreementTms);
+            FXCollections.sort(purchaseAgreementTMS, comparator);
+            table.setItems(purchaseAgreementTMS);
         }
     }
 
@@ -249,13 +249,13 @@ public class PurchaseAgreementController implements Initializable {
             return;
         }
 
-        ObservableList<PurchaseAgreementTm> purchaseAgreementTms = FXCollections.observableArrayList();
+        ObservableList<PurchaseAgreementTM> purchaseAgreementTMS = FXCollections.observableArrayList();
 
         for (int i=0; i<value; i++){
-            purchaseAgreementTms.add(tableData.get(i));
+            purchaseAgreementTMS.add(tableData.get(i));
         }
 
-        table.setItems(purchaseAgreementTms);
+        table.setItems(purchaseAgreementTMS);
     }
 
 
@@ -275,7 +275,7 @@ public class PurchaseAgreementController implements Initializable {
 
     public void tableSearch() {
 
-        FilteredList<PurchaseAgreementTm> filteredData = new FilteredList<>(tableData, b -> true);
+        FilteredList<PurchaseAgreementTM> filteredData = new FilteredList<>(tableData, b -> true);
 
         searchTxt.textProperty().addListener((observable, oldValue, newValue) -> {
             filteredData.setPredicate(purchaseAgreement -> {
@@ -302,7 +302,7 @@ public class PurchaseAgreementController implements Initializable {
             });
         });
 
-        SortedList<PurchaseAgreementTm> sortedData = new SortedList<>(filteredData);
+        SortedList<PurchaseAgreementTM> sortedData = new SortedList<>(filteredData);
 
         sortedData.comparatorProperty().bind(table.comparatorProperty());
 
@@ -323,7 +323,7 @@ public class PurchaseAgreementController implements Initializable {
     public void setOwnerIdCmbValues(){
 
         try {
-            ObservableList<String> ownerIds = purchaseAgreementModel.getAllOwnerIds();
+            ObservableList<String> ownerIds = purchaseAgreementBO.getAllOwnerIds();
             ownerIdCmb.setItems(ownerIds);
             ownerIdCmb.getSelectionModel().selectFirst();
         } catch (SQLException | ClassNotFoundException e) {
@@ -338,7 +338,7 @@ public class PurchaseAgreementController implements Initializable {
     public void setHouseIdCmbValues(){
 
         try {
-            ObservableList<String> houseIds = purchaseAgreementModel.getAllHouseIds();
+            ObservableList<String> houseIds = purchaseAgreementBO.getAllHouseIds();
             houseIdCmb.setItems(houseIds);
             houseIdCmb.getSelectionModel().selectFirst();
         } catch (SQLException | ClassNotFoundException e) {
@@ -355,7 +355,7 @@ public class PurchaseAgreementController implements Initializable {
         ObservableList<String> agreementIds = FXCollections.observableArrayList();
         agreementIds.add("Select");
 
-        for(PurchaseAgreementTm x : tableData){
+        for(PurchaseAgreementTM x : tableData){
             agreementIds.add(x.getPurchaseAgreementId());
         }
 
@@ -369,7 +369,7 @@ public class PurchaseAgreementController implements Initializable {
         ObservableList<Integer> rows = FXCollections.observableArrayList();
         int count = 0;
 
-        for (PurchaseAgreementTm x : tableData){
+        for (PurchaseAgreementTM x : tableData){
             count++;
             rows.add(count);
 
@@ -394,9 +394,9 @@ public class PurchaseAgreementController implements Initializable {
 
     public void setTableAction(){
 
-        Callback<TableColumn<PurchaseAgreementTm, String>, TableCell<PurchaseAgreementTm, String>> cellFoctory = (TableColumn<PurchaseAgreementTm, String> param) -> {
+        Callback<TableColumn<PurchaseAgreementTM, String>, TableCell<PurchaseAgreementTM, String>> cellFoctory = (TableColumn<PurchaseAgreementTM, String> param) -> {
 
-            final TableCell<PurchaseAgreementTm, String> cell = new TableCell<PurchaseAgreementTm, String>() {
+            final TableCell<PurchaseAgreementTM, String> cell = new TableCell<PurchaseAgreementTM, String>() {
                 @Override
                 public void updateItem(String item, boolean empty) {
                     super.updateItem(item, empty);
@@ -406,8 +406,8 @@ public class PurchaseAgreementController implements Initializable {
                         setText(null);
 
                     } else {
-                        Image image1 = new Image("C:\\Users\\Laptop World\\IdeaProjects\\test\\src\\main\\resources\\image\\visibility.png");
-                        Image image2 = new Image("C:\\Users\\Laptop World\\IdeaProjects\\test\\src\\main\\resources\\image\\send.png");
+                        Image image1 = new Image("C:\\Users\\PCWORLD\\IdeaProjects\\Semester_final\\src\\main\\resources\\assets\\image\\visibility.png");
+                        Image image2 = new Image("C:\\Users\\PCWORLD\\IdeaProjects\\Semester_final\\src\\main\\resources\\assets\\image\\send.png");
 
                         ImageView viewDetails = new ImageView();
                         viewDetails.setImage(image1);
@@ -425,10 +425,10 @@ public class PurchaseAgreementController implements Initializable {
 
                         viewDetails.setOnMouseClicked((MouseEvent event) -> {
 
-                            PurchaseAgreementTm selectedAgreement = table.getSelectionModel().getSelectedItem();
+                            PurchaseAgreementTM selectedAgreement = table.getSelectionModel().getSelectedItem();
 
                             try {
-                                FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/PurchaseAgreementDetails.fxml"));
+                                FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/PurchaseAgreementDetails.fxml"));
                                 Parent root = fxmlLoader.load();
                                 PurchaseAgreementDetailsController purchaseAgreementDetailsController = fxmlLoader.getController();
                                 purchaseAgreementDetailsController.setSelectedAgreementDetails(selectedAgreement);
@@ -479,7 +479,13 @@ public class PurchaseAgreementController implements Initializable {
     public void loadTable(){
 
         try {
-            tableData = purchaseAgreementModel.getAllAgreements();
+            ObservableList<PurchaseAgreementDTO> purchaseAgreementDTOS = purchaseAgreementBO.getAll();
+            ObservableList<PurchaseAgreementTM> purchaseAgreementTMS = FXCollections.observableArrayList();
+
+            for(PurchaseAgreementDTO x : purchaseAgreementDTOS){
+                purchaseAgreementTMS.add(new PurchaseAgreementTM().toTM(x));
+            }
+            tableData = purchaseAgreementTMS;
             table.setItems(tableData);
 
         } catch (SQLException | ClassNotFoundException e) {

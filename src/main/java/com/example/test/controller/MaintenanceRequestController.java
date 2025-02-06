@@ -1,12 +1,15 @@
 package com.example.test.controller;
 
 import com.example.test.SendMail;
-import com.example.test.dto.TenantDto;
-import com.example.test.dto.tm.MaintenanceRequestTm;
-import com.example.test.dto.tm.PaymentTm;
-import com.example.test.dto.tm.TenantTm;
-import com.example.test.model.MaintenanceRequestModel;
-import com.example.test.model.TenantModel;
+import com.example.test.bo.BOFactory;
+import com.example.test.bo.custom.MaintenanceRequestBO;
+import com.example.test.dto.MaintenanceRequestDTO;
+import com.example.test.dto.TenantDTO;
+import com.example.test.entity.MaintainRequest;
+import com.example.test.entity.Tenant;
+import com.example.test.view.tdm.MaintenanceRequestTM;
+import com.example.test.dao.custom.impl.MaintenanceRequestDAOImpl;
+import com.example.test.dao.custom.impl.TenantDAOImpl;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -26,7 +29,6 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
 import javafx.stage.Stage;
-import javafx.stage.StageStyle;
 import javafx.util.Callback;
 import javafx.util.Duration;
 import org.controlsfx.control.Notifications;
@@ -45,34 +47,34 @@ public class MaintenanceRequestController implements Initializable {
     private Button editbtn;
 
     @FXML
-    private TableView<MaintenanceRequestTm> table;
+    private TableView<MaintenanceRequestTM> table;
 
     @FXML
-    private TableColumn<MaintenanceRequestTm, String> requestNoColumn;
+    private TableColumn<MaintenanceRequestTM, String> requestNoColumn;
 
     @FXML
-    private TableColumn<MaintenanceRequestTm, String> descriptionColumn;
+    private TableColumn<MaintenanceRequestTM, String> descriptionColumn;
 
     @FXML
-    private TableColumn<MaintenanceRequestTm, Double> estimatedCostColumn;
+    private TableColumn<MaintenanceRequestTM, Double> estimatedCostColumn;
 
     @FXML
-    private TableColumn<MaintenanceRequestTm, String> actualCostColumn;
+    private TableColumn<MaintenanceRequestTM, String> actualCostColumn;
 
     @FXML
-    private TableColumn<MaintenanceRequestTm, String> dateColumn;
+    private TableColumn<MaintenanceRequestTM, String> dateColumn;
 
     @FXML
-    private TableColumn<MaintenanceRequestTm, String> technicianColumn;
+    private TableColumn<MaintenanceRequestTM, String> technicianColumn;
 
     @FXML
-    private TableColumn<MaintenanceRequestTm, String> tenantIdColumn;
+    private TableColumn<MaintenanceRequestTM, String> tenantIdColumn;
 
     @FXML
-    private TableColumn<MaintenanceRequestTm, String> statusColumn;
+    private TableColumn<MaintenanceRequestTM, String> statusColumn;
 
     @FXML
-    private TableColumn<MaintenanceRequestTm, String> actionColumn;
+    private TableColumn<MaintenanceRequestTM, String> actionColumn;
 
     @FXML
     private Button addNewMaintanceRequestBtn;
@@ -109,16 +111,16 @@ public class MaintenanceRequestController implements Initializable {
 
 
     private boolean isOnlyInProgressRequest = false;
-    private ObservableList<MaintenanceRequestTm> tableData;
-    private final MaintenanceRequestModel maintenanceRequestModel = new MaintenanceRequestModel();
-    private final TenantModel tenantModel = new TenantModel();
+    private ObservableList<MaintenanceRequestTM> tableData;
+    private final MaintenanceRequestBO maintenanceRequestBO = (MaintenanceRequestBO) BOFactory.getInstance().getBO(BOFactory.BOType.MAINTENANCEREQUEST);
+    private final TenantDAOImpl tenantDAOImpl = new TenantDAOImpl();
 
 
     @FXML
     void addNewMaintenanceRequestOnAction(ActionEvent event) {
 
         try {
-            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/AddNewMaintenanceRequest.fxml"));
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/AddNewMaintenanceRequest.fxml"));
             Parent root = fxmlLoader.load();
             Scene scene = new Scene(root);
             Stage s1 = new Stage();
@@ -135,7 +137,7 @@ public class MaintenanceRequestController implements Initializable {
     @FXML
     void deleteOnAction(ActionEvent event) {
 
-        MaintenanceRequestTm selectedRequest = table.getSelectionModel().getSelectedItem();
+        MaintenanceRequestTM selectedRequest = table.getSelectionModel().getSelectedItem();
 
         if(selectedRequest==null){
            return;
@@ -157,7 +159,7 @@ public class MaintenanceRequestController implements Initializable {
             if (result.isPresent() && result.get() == buttonYes) {
 
                 try {
-                   String response =  maintenanceRequestModel.deActiveSelectedMaintenanceRequest(selectedRequest);
+                   String response =  maintenanceRequestBO.delete(new MaintenanceRequestDTO().toDTO(selectedRequest));
                    notification(response);
                    loadTable();
 
@@ -177,7 +179,7 @@ public class MaintenanceRequestController implements Initializable {
     @FXML
     void editOnAction(ActionEvent event) {
 
-        MaintenanceRequestTm selectedRequest = table.getSelectionModel().getSelectedItem();
+        MaintenanceRequestTM selectedRequest = table.getSelectionModel().getSelectedItem();
 
         if(selectedRequest==null){
             return;
@@ -186,7 +188,7 @@ public class MaintenanceRequestController implements Initializable {
         if(selectedRequest.getStatus().equals("In Progress") && selectedRequest.getActualCost().equals("-")) {
 
             try {
-                FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/AddNewMaintenanceRequest.fxml"));
+                FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/AddNewMaintenanceRequest.fxml"));
                 Parent root = fxmlLoader.load();
                 AddNewMaintenanceRequestController addNewMaintenanceRequestController = fxmlLoader.getController();
                 addNewMaintenanceRequestController.setSelectedRequestDetailsToUpdate(selectedRequest);
@@ -222,7 +224,7 @@ public class MaintenanceRequestController implements Initializable {
     @FXML
     void searchOnAction(ActionEvent event) {
 
-        ObservableList<MaintenanceRequestTm> searchedRequests = FXCollections.observableArrayList();
+        ObservableList<MaintenanceRequestTM> searchedRequests = FXCollections.observableArrayList();
 
         String selectedRequestNo = requestNoCmb.getValue();
         String selectedStatus = statusCmb.getValue();
@@ -236,7 +238,7 @@ public class MaintenanceRequestController implements Initializable {
 
 
         if (requestNoSelected) {
-            ObservableList<MaintenanceRequestTm> requestsByRequestNo = getRequestByRequestNo(selectedRequestNo);
+            ObservableList<MaintenanceRequestTM> requestsByRequestNo = getRequestByRequestNo(selectedRequestNo);
 
             if (requestsByRequestNo.isEmpty()) {
                 table.setItems(requestsByRequestNo);
@@ -244,19 +246,19 @@ public class MaintenanceRequestController implements Initializable {
                 searchedRequests.addAll(requestsByRequestNo);
 
                 if (statusSelected) {
-                    ObservableList<MaintenanceRequestTm> filteredByStatus = filterRequestsByStatus(searchedRequests, selectedStatus);
+                    ObservableList<MaintenanceRequestTM> filteredByStatus = filterRequestsByStatus(searchedRequests, selectedStatus);
                     searchedRequests.clear();
                     searchedRequests.addAll(filteredByStatus);
                 }
 
                 if (tenantIdSelected) {
-                    ObservableList<MaintenanceRequestTm> filteredByTenantId = filterRequestsByTenantId(searchedRequests, selectedTenantId);
+                    ObservableList<MaintenanceRequestTM> filteredByTenantId = filterRequestsByTenantId(searchedRequests, selectedTenantId);
                     searchedRequests.clear();
                     searchedRequests.addAll(filteredByTenantId);
                 }
 
                 if (dateSelected) {
-                    ObservableList<MaintenanceRequestTm> filteredByDate = filterRequestsByDate(searchedRequests, selectedDate);
+                    ObservableList<MaintenanceRequestTM> filteredByDate = filterRequestsByDate(searchedRequests, selectedDate);
                     searchedRequests.clear();
                     searchedRequests.addAll(filteredByDate);
                 }
@@ -265,7 +267,7 @@ public class MaintenanceRequestController implements Initializable {
             }
 
         } else if (statusSelected || tenantIdSelected || dateSelected) {
-            ObservableList<MaintenanceRequestTm> allRequests = tableData;
+            ObservableList<MaintenanceRequestTM> allRequests = tableData;
             searchedRequests.addAll(allRequests);
 
             if (statusSelected) {
@@ -283,14 +285,14 @@ public class MaintenanceRequestController implements Initializable {
             table.setItems(searchedRequests);
 
         } else {
-            ObservableList<MaintenanceRequestTm> allRequests = tableData;
+            ObservableList<MaintenanceRequestTM> allRequests = tableData;
             table.setItems(allRequests);
         }
     }
 
 
 
-    private ObservableList<MaintenanceRequestTm> getRequestByRequestNo(String requestNo) {
+    private ObservableList<MaintenanceRequestTM> getRequestByRequestNo(String requestNo) {
         return FXCollections.observableArrayList(
                 tableData.stream()
                         .filter(request -> request.getMaintenanceRequestNo().equalsIgnoreCase(requestNo))
@@ -299,7 +301,7 @@ public class MaintenanceRequestController implements Initializable {
     }
 
 
-    private ObservableList<MaintenanceRequestTm> filterRequestsByStatus(ObservableList<MaintenanceRequestTm> requests, String status) {
+    private ObservableList<MaintenanceRequestTM> filterRequestsByStatus(ObservableList<MaintenanceRequestTM> requests, String status) {
         return FXCollections.observableArrayList(
                 requests.stream()
                         .filter(request -> request.getStatus().equalsIgnoreCase(status))
@@ -308,7 +310,7 @@ public class MaintenanceRequestController implements Initializable {
     }
 
 
-    private ObservableList<MaintenanceRequestTm> filterRequestsByTenantId(ObservableList<MaintenanceRequestTm> requests, String tenantId) {
+    private ObservableList<MaintenanceRequestTM> filterRequestsByTenantId(ObservableList<MaintenanceRequestTM> requests, String tenantId) {
         return FXCollections.observableArrayList(
                 requests.stream()
                         .filter(request -> request.getTenantId().equalsIgnoreCase(tenantId))
@@ -317,7 +319,7 @@ public class MaintenanceRequestController implements Initializable {
     }
 
 
-    private ObservableList<MaintenanceRequestTm> filterRequestsByDate(ObservableList<MaintenanceRequestTm> requests, String date) {
+    private ObservableList<MaintenanceRequestTM> filterRequestsByDate(ObservableList<MaintenanceRequestTM> requests, String date) {
         return FXCollections.observableArrayList(
                 requests.stream()
                         .filter(request -> request.getDate().toString().equalsIgnoreCase(date))
@@ -331,45 +333,45 @@ public class MaintenanceRequestController implements Initializable {
 
 
         String sortType = sortCmb.getSelectionModel().getSelectedItem();
-        ObservableList<MaintenanceRequestTm> maintenanceRequestTms = FXCollections.observableArrayList(tableData);
+        ObservableList<MaintenanceRequestTM> maintenanceRequestTMS = FXCollections.observableArrayList(tableData);
 
         if (sortType == null) {
             return;
         }
 
-        Comparator<MaintenanceRequestTm> comparator = null;
+        Comparator<MaintenanceRequestTM> comparator = null;
 
         switch (sortType) {
             case "Maintenance Request ID (Ascending)":
-                comparator = Comparator.comparing(MaintenanceRequestTm::getMaintenanceRequestNo);
+                comparator = Comparator.comparing(MaintenanceRequestTM::getMaintenanceRequestNo);
                 break;
 
             case "Maintenance Request ID (Descending)":
-                comparator = Comparator.comparing(MaintenanceRequestTm::getMaintenanceRequestNo).reversed();
+                comparator = Comparator.comparing(MaintenanceRequestTM::getMaintenanceRequestNo).reversed();
                 break;
 
             case "Estimated Cost (Ascending)":
-                comparator = Comparator.comparing(MaintenanceRequestTm::getEstimatedCost);
+                comparator = Comparator.comparing(MaintenanceRequestTM::getEstimatedCost);
                 break;
 
             case "Estimated Cost (Descending)":
-                comparator = Comparator.comparing(MaintenanceRequestTm::getEstimatedCost).reversed();
+                comparator = Comparator.comparing(MaintenanceRequestTM::getEstimatedCost).reversed();
                 break;
 
             case "Actual Cost (Ascending)":
-                comparator = Comparator.comparing(MaintenanceRequestTm::getActualCost);
+                comparator = Comparator.comparing(MaintenanceRequestTM::getActualCost);
                 break;
 
             case "Actual Cost (Descending)":
-                comparator = Comparator.comparing(MaintenanceRequestTm::getActualCost).reversed();
+                comparator = Comparator.comparing(MaintenanceRequestTM::getActualCost).reversed();
                 break;
 
             case "Date (Ascending)":
-                comparator = Comparator.comparing(MaintenanceRequestTm::getDate);
+                comparator = Comparator.comparing(MaintenanceRequestTM::getDate);
                 break;
 
             case "Date (Descending)":
-                comparator = Comparator.comparing(MaintenanceRequestTm::getDate).reversed();
+                comparator = Comparator.comparing(MaintenanceRequestTM::getDate).reversed();
                 break;
 
             default:
@@ -377,8 +379,8 @@ public class MaintenanceRequestController implements Initializable {
         }
 
         if (comparator != null) {
-            FXCollections.sort(maintenanceRequestTms, comparator);
-            table.setItems(maintenanceRequestTms);
+            FXCollections.sort(maintenanceRequestTMS, comparator);
+            table.setItems(maintenanceRequestTMS);
         }
     }
 
@@ -393,12 +395,12 @@ public class MaintenanceRequestController implements Initializable {
             return;
         }
 
-        ObservableList<MaintenanceRequestTm> maintenanceRequestTms = FXCollections.observableArrayList();
+        ObservableList<MaintenanceRequestTM> maintenanceRequestTMS = FXCollections.observableArrayList();
 
         for (int i=0; i<value; i++){
-            maintenanceRequestTms.add(tableData.get(i));
+            maintenanceRequestTMS.add(tableData.get(i));
         }
-        table.setItems(maintenanceRequestTms);
+        table.setItems(maintenanceRequestTMS);
     }
 
 
@@ -421,7 +423,7 @@ public class MaintenanceRequestController implements Initializable {
 
     public void tableSearch() {
 
-        FilteredList<MaintenanceRequestTm> filteredData = new FilteredList<>(tableData, b -> true);
+        FilteredList<MaintenanceRequestTM> filteredData = new FilteredList<>(tableData, b -> true);
 
         searchTxt.textProperty().addListener((observable, oldValue, newValue) -> {
             filteredData.setPredicate(request -> {
@@ -452,7 +454,7 @@ public class MaintenanceRequestController implements Initializable {
             });
         });
 
-        SortedList<MaintenanceRequestTm> sortedData = new SortedList<>(filteredData);
+        SortedList<MaintenanceRequestTM> sortedData = new SortedList<>(filteredData);
 
         sortedData.comparatorProperty().bind(table.comparatorProperty());
 
@@ -460,12 +462,10 @@ public class MaintenanceRequestController implements Initializable {
     }
 
 
-
-
     public void setTenantIdCmbValues(){
 
         try {
-            ObservableList<String> tenantIds = maintenanceRequestModel.getDistinctTenantIds();
+            ObservableList<String> tenantIds = maintenanceRequestBO.getDistinctTenantIds();
             tenantIdCmb.setItems(tenantIds);
 
         } catch (SQLException | ClassNotFoundException e) {
@@ -492,7 +492,7 @@ public class MaintenanceRequestController implements Initializable {
         ObservableList<String> requestNos = FXCollections.observableArrayList();
         requestNos.add("Select");
 
-        for (MaintenanceRequestTm x : tableData){
+        for (MaintenanceRequestTM x : tableData){
             requestNos.add(x.getMaintenanceRequestNo());
         }
 
@@ -508,7 +508,7 @@ public class MaintenanceRequestController implements Initializable {
         ObservableList<Integer> rows = FXCollections.observableArrayList();
         int count = 0;
 
-        for (MaintenanceRequestTm x : tableData){
+        for (MaintenanceRequestTM x : tableData){
             count++;
             rows.add(count);
 
@@ -545,9 +545,9 @@ public class MaintenanceRequestController implements Initializable {
 
     public void setTableColumnsValue(){
 
-        Callback<TableColumn<MaintenanceRequestTm, String>, TableCell<MaintenanceRequestTm, String>> cellFoctory = (TableColumn<MaintenanceRequestTm, String> param) -> {
+        Callback<TableColumn<MaintenanceRequestTM, String>, TableCell<MaintenanceRequestTM, String>> cellFoctory = (TableColumn<MaintenanceRequestTM, String> param) -> {
 
-            final TableCell<MaintenanceRequestTm, String> cell = new TableCell<MaintenanceRequestTm, String>() {
+            final TableCell<MaintenanceRequestTM, String> cell = new TableCell<MaintenanceRequestTM, String>() {
                 @Override
                 public void updateItem(String item, boolean empty) {
                     super.updateItem(item, empty);
@@ -557,8 +557,8 @@ public class MaintenanceRequestController implements Initializable {
                         setText(null);
 
                     } else {
-                        Image image1 = new Image("C:\\Users\\Laptop World\\IdeaProjects\\test\\src\\main\\resources\\image\\ethics.png");
-                        Image image2 = new Image("C:\\Users\\Laptop World\\IdeaProjects\\test\\src\\main\\resources\\image\\file.png");
+                        Image image1 = new Image("C:\\Users\\PCWORLD\\IdeaProjects\\Semester_final\\src\\main\\resources\\assets\\image\\ethics.png");
+                        Image image2 = new Image("C:\\Users\\PCWORLD\\IdeaProjects\\Semester_final\\src\\main\\resources\\assets\\image\\file.png");
 
                         ImageView makeComplete = new ImageView();
                         makeComplete.setImage(image1);
@@ -575,7 +575,7 @@ public class MaintenanceRequestController implements Initializable {
 
                         makeComplete.setOnMouseClicked((MouseEvent event) -> {
 
-                            MaintenanceRequestTm selectedRequest = table.getSelectionModel().getSelectedItem();
+                            MaintenanceRequestTM selectedRequest = table.getSelectionModel().getSelectedItem();
 
                             if(selectedRequest.getStatus().equals("In Progress") && !selectedRequest.getActualCost().equals("-")){
 
@@ -592,15 +592,18 @@ public class MaintenanceRequestController implements Initializable {
                                 Optional<ButtonType> result = alert.showAndWait();
                                 if (result.isPresent() && result.get() == buttonYes) {
                                     try {
-                                        String response = maintenanceRequestModel.setStatusComplete(selectedRequest);
+                                        MaintenanceRequestDTO maintenanceRequestDTO = new MaintenanceRequestDTO();
+                                        maintenanceRequestDTO.setMaintenanceRequestNo(selectedRequest.getMaintenanceRequestNo());
+                                        maintenanceRequestDTO.setStatus("Completed");
+                                        String response = maintenanceRequestBO.updateRequestStatus(maintenanceRequestDTO);
                                         notification(response);
                                         loadTable();
 
                                         notification("Sent Email To Tenant ID: "+selectedRequest.getTenantId()+" , upon completing maintenance request");
 
-                                        String email = tenantModel.getTenantEmailById(selectedRequest.getTenantId());
+                                        TenantDTO tenant = maintenanceRequestBO.getTenantDetails(selectedRequest.getTenantId());
                                         SendMail sendMail = new SendMail();
-                                        new Thread(() -> sendMail.sendMail(email,"Completing Maintenance requirement: "+selectedRequest.getDescription(),"Happy to say that Your Maintenance Request successfully completed,\nHope you find it helpful,\nThank You!\n\n\nThe Grand View Residences\nColombo 08")).start();
+                                        new Thread(() -> sendMail.sendMail(tenant.getEmail(),"Completing Maintenance requirement: "+selectedRequest.getDescription(),"Happy to say that Your Maintenance Request successfully completed,\nHope you find it helpful,\nThank You!\n\n\nThe Grand View Residences\nColombo 08")).start();
 
                                     } catch (SQLException | ClassNotFoundException e) {
                                         e.printStackTrace();
@@ -617,7 +620,7 @@ public class MaintenanceRequestController implements Initializable {
 
                         makeRejected.setOnMouseClicked((MouseEvent event) -> {
 
-                            MaintenanceRequestTm selectedRequest = table.getSelectionModel().getSelectedItem();
+                            MaintenanceRequestTM selectedRequest = table.getSelectionModel().getSelectedItem();
 
                             if(selectedRequest.getStatus().equals("In Progress") && selectedRequest.getActualCost().equals("-")) {
 
@@ -635,8 +638,15 @@ public class MaintenanceRequestController implements Initializable {
                                 if (result.isPresent() && result.get() == buttonYes) {
 
                                     try {
-                                        String response = maintenanceRequestModel.makeRequestRejected(selectedRequest);
-                                        notification(response);
+                                        MaintenanceRequestDTO maintenanceRequestDTO = new MaintenanceRequestDTO();
+                                        maintenanceRequestDTO.setMaintenanceRequestNo(selectedRequest.getMaintenanceRequestNo());
+                                        maintenanceRequestDTO.setStatus("Rejected");
+                                        String response = maintenanceRequestBO.updateRequestStatus(maintenanceRequestDTO);
+
+                                        if(response.equals("Successfully Completed The Maintenance Request No :"+selectedRequest.getMaintenanceRequestNo())){
+                                            notification("Successfully Rejected The Maintenance Request No :"+selectedRequest.getMaintenanceRequestNo());
+                                        }
+
                                         loadTable();
 
                                     } catch (SQLException | ClassNotFoundException e) {
@@ -680,7 +690,13 @@ public class MaintenanceRequestController implements Initializable {
     public void loadTable() {
 
         try {
-            tableData = maintenanceRequestModel.getAllRequests();
+            ObservableList<MaintenanceRequestDTO> maintenanceRequestDTOS = maintenanceRequestBO.getAll();
+            ObservableList<MaintenanceRequestTM> maintenanceRequestTMS = FXCollections.observableArrayList();
+
+            for(MaintenanceRequestDTO x : maintenanceRequestDTOS){
+                maintenanceRequestTMS.add(new MaintenanceRequestTM().toTM(x));
+            }
+            tableData = maintenanceRequestTMS;
             table.setItems(tableData);
 
         } catch (SQLException | ClassNotFoundException e) {
@@ -709,7 +725,13 @@ public class MaintenanceRequestController implements Initializable {
         isOnlyInProgressRequest = true;
 
         try {
-            tableData = maintenanceRequestModel.getAllInProgressRequests();
+            ObservableList<MaintenanceRequestDTO> maintenanceRequestDTOS = maintenanceRequestBO.getAllInProgressRequests();
+            ObservableList<MaintenanceRequestTM> maintenanceRequestTMS = FXCollections.observableArrayList();
+
+            for(MaintenanceRequestDTO x : maintenanceRequestDTOS){
+                maintenanceRequestTMS.add(new MaintenanceRequestTM().toTM(x));
+            }
+            tableData = maintenanceRequestTMS;
             table.setItems(tableData);
 
         } catch (SQLException | ClassNotFoundException e) {

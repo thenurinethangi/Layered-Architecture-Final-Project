@@ -1,12 +1,14 @@
 package com.example.test.controller;
 
-import com.example.test.dto.SignInQuestionsDto;
-import com.example.test.dto.SignUpDto;
-import com.example.test.model.SignUpQuestionsModel;
+import com.example.test.bo.BOFactory;
+import com.example.test.bo.custom.SignUpBO;
+import com.example.test.dto.UserValidationDTO;
+import com.example.test.dto.UserDTO;
 import javafx.animation.TranslateTransition;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -15,6 +17,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 import javafx.util.Duration;
+import org.controlsfx.control.Notifications;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -36,30 +39,16 @@ public class SignUpQuestionsController {
     @FXML
     private Button back;
 
-    private FXMLLoader fxmlLoader;
-    private Parent root;
-    private Scene scene;
-    private Stage stage;
-
-    private SignUpDto dto;
+    private UserDTO dto;
     private Stage s1;
-    private SignUpQuestionsModel signUpQuestionsModel;
 
-    public SignUpQuestionsController(){
-
-        try {
-            signUpQuestionsModel = new SignUpQuestionsModel();
-        }
-        catch (Exception e){
-            e.printStackTrace();
-        }
-    }
+    private SignUpBO signUpBO = (SignUpBO) BOFactory.getInstance().getBO(BOFactory.BOType.SIGNUP);
 
 
     @FXML
     void backOnAction(ActionEvent event) throws IOException {
 
-        stage = (Stage)((Node)event.getSource()).getScene().getWindow();
+        Stage stage = (Stage)((Node)event.getSource()).getScene().getWindow();
         stage.close();
     }
 
@@ -81,46 +70,56 @@ public class SignUpQuestionsController {
         }
         else{
 
-            SignInQuestionsDto signInQuestionsDto = new SignInQuestionsDto(fAnswer,sAnswer,tAnswer,dto.getUserName());
-            String response = signUpQuestionsModel.register(dto,signInQuestionsDto);
+            try {
+                UserValidationDTO userValidationDto = new UserValidationDTO(fAnswer, sAnswer, tAnswer, dto.getUserName());
 
-            if(response.equals("All Done")){
+                String response = signUpBO.add(dto);
+                if(response.equals("Success")){
+                    boolean result = signUpBO.addUserValidationDetails(userValidationDto);
+                    if(result){
 
-                stage = (Stage)((Node)event.getSource()).getScene().getWindow();
-                stage.close();
+                        Stage stage = (Stage)((Node)event.getSource()).getScene().getWindow();
+                        stage.close();
 
-                fxmlLoader = new FXMLLoader(getClass().getResource("/view/Splash.fxml"));
-                root = fxmlLoader.load();
-                scene = new Scene(root);
-                stage = s1;
+                        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/Splash.fxml"));
+                        Parent root = fxmlLoader.load();
+                        Scene scene = new Scene(root);
+                        stage = s1;
 
-                TranslateTransition translateTransition = new TranslateTransition(Duration.millis(1000));
-                translateTransition.setFromX(0);
-                translateTransition.setToX(-300);
-                translateTransition.setCycleCount(1);
-                translateTransition.setAutoReverse(true);
+                        TranslateTransition translateTransition = new TranslateTransition(Duration.millis(1000));
+                        translateTransition.setFromX(0);
+                        translateTransition.setToX(-300);
+                        translateTransition.setCycleCount(1);
+                        translateTransition.setAutoReverse(true);
 
-                translateTransition.setNode(s1.getScene().getRoot());
+                        translateTransition.setNode(s1.getScene().getRoot());
 
-                translateTransition.setOnFinished(e -> {
-                    stage.setScene(scene);
-                    stage.centerOnScreen();
-                });
+                        Stage finalStage = stage;
+                        translateTransition.setOnFinished(e -> {
+                            finalStage.setScene(scene);
+                            finalStage.centerOnScreen();
+                        });
 
-                translateTransition.play();
+                        translateTransition.play();
+
+                        notification("Welcome to the Grand View Residency Apartment Management System.");
+                    }
+                    else{
+
+                        Stage stage = (Stage)((Node)event.getSource()).getScene().getWindow();
+                        stage.close();
+
+                        notification("Please try again later");
+
+                    }
+                }
+                else{
+                    notification("Please try again later");
+                }
 
             }
-            else{
-
-                stage = (Stage)((Node)event.getSource()).getScene().getWindow();
-                stage.close();
-
-                Alert alert = new Alert(Alert.AlertType.WARNING);
-                alert.setTitle("Something went wrong");
-                alert.setHeaderText("Please try again later");
-                alert.setContentText(response);
-                alert.showAndWait();
-
+            catch (ClassNotFoundException e) {
+                throw new RuntimeException(e);
             }
 
         }
@@ -129,11 +128,23 @@ public class SignUpQuestionsController {
     }
 
 
-    public void setSignUpData(SignUpDto signUpDto, Stage stage){
+    public void setSignUpData(UserDTO userDto, Stage stage){
 
-        dto = signUpDto;
+        dto = userDto;
         s1 = stage;
 
     }
 
+
+    public void notification(String message){
+
+        Notifications notifications = Notifications.create();
+        notifications.title("Notification");
+        notifications.text(message);
+        notifications.hideCloseButton();
+        notifications.hideAfter(Duration.seconds(4));
+        notifications.position(Pos.CENTER);
+        notifications.darkStyle();
+        notifications.showInformation();
+    }
 }

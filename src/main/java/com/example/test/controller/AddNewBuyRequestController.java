@@ -1,10 +1,13 @@
 package com.example.test.controller;
 
-import com.example.test.dto.RequestDto;
-import com.example.test.dto.tm.CustomerTm;
-import com.example.test.model.AddNewRentRequestModel;
-import com.example.test.model.CustomerModel;
-import com.example.test.validation.UserInputValidation;
+import com.example.test.bo.BOFactory;
+import com.example.test.bo.custom.RequestBO;
+import com.example.test.dto.CustomerDTO;
+import com.example.test.dto.HouseTypeDTO;
+import com.example.test.dto.RequestDTO;
+import com.example.test.entity.Customer;
+import com.example.test.dao.custom.impl.CustomerDAOImpl;
+import com.example.test.UserInputValidation;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -106,10 +109,8 @@ public class AddNewBuyRequestController implements Initializable {
     @FXML
     private ComboBox<String> petCmb;
 
-    private final AddNewRentRequestModel addNewRentRequestModel = new AddNewRentRequestModel();
-    private final CustomerModel customerModel = new CustomerModel();
+    private final RequestBO requestBO = (RequestBO) BOFactory.getInstance().getBO(BOFactory.BOType.REQUEST);
     private ObservableList<String> yesNo = FXCollections.observableArrayList("Select","Yes","No");
-
 
 
     @FXML
@@ -137,9 +138,9 @@ public class AddNewBuyRequestController implements Initializable {
         }
 
         try {
-            ObservableList<CustomerTm> cus = customerModel.getCustomerById(customerId);
+            CustomerDTO customer = requestBO.getCustomerDetails(customerId);
 
-            if(cus.isEmpty()){
+            if(customer==null){
                 customerIdLabel.setText("This Customer Id does not exist");
                 return;
             }
@@ -203,13 +204,13 @@ public class AddNewBuyRequestController implements Initializable {
 
             if(b1 && b2 && b3 && b4 && b5 && b7){
 
-                RequestDto requestDto = new RequestDto(requestId,customerId,dateLabel.getText(),"Buy",houseType,Integer.parseInt(familyMembersCount),
+                RequestDTO requestDto = new RequestDTO(requestId,customerId,dateLabel.getText(),"Buy",houseType,Integer.parseInt(familyMembersCount),
                         Double.parseDouble(monthlyIncome),Double.parseDouble(annualIncome),bankDetails,reasonToMove,"N/A",
                         "N/A","N/A",smoking,criminalBackground,pets);
 
                 String response = null;
                 try {
-                    response = addNewRentRequestModel.addNewRentRequest(requestDto);
+                    response = requestBO.add(requestDto);
                     if(response.equals("Successfully Added New Rent Request")){
                         generateNewRequestId();
                     }
@@ -232,13 +233,13 @@ public class AddNewBuyRequestController implements Initializable {
 
             if(b1 && b2 && b3 && b4 && b5){
 
-                RequestDto requestDto = new RequestDto(requestId,customerId,dateLabel.getText(),"Buy",houseType,Integer.parseInt(familyMembersCount),
+                RequestDTO requestDto = new RequestDTO(requestId,customerId,dateLabel.getText(),"Buy",houseType,Integer.parseInt(familyMembersCount),
                         Double.parseDouble(monthlyIncome),Double.parseDouble(annualIncome),bankDetails,reasonToMove,"N/A",
                         "N/A",landLordNumber,smoking,criminalBackground,pets);
 
                 String response = null;
                 try {
-                    response = addNewRentRequestModel.addNewRentRequest(requestDto);
+                    response = requestBO.add(requestDto);
                     if(response.equals("Successfully Added New Rent Request")){
                         generateNewRequestId();
                     }
@@ -293,14 +294,14 @@ public class AddNewBuyRequestController implements Initializable {
             if(b1){
 
                 try {
-                    ObservableList<CustomerTm> customer =  customerModel.searchCustomerAlreadyExistOrNot(cusId);
+                    CustomerDTO customer =  requestBO.getCustomerDetails(cusId);
 
-                    if(customer.isEmpty()){
+                    if(customer==null){
 
                         notification("Not Registered Customer, Please Add As New Customer");
 
                         try{
-                            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/AddNewCustomer.fxml"));
+                            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/AddNewCustomer.fxml"));
                             Parent root = fxmlLoader.load();
                             Scene scene = new Scene(root);
                             Stage stage = new Stage();
@@ -316,7 +317,7 @@ public class AddNewBuyRequestController implements Initializable {
                     }
                     else{
 
-                        customerIdTxt.setText(customer.get(0).getCustomerId());
+                        customerIdTxt.setText(customer.getCustomerId());
                     }
 
                 } catch (SQLException | ClassNotFoundException e) {
@@ -330,13 +331,13 @@ public class AddNewBuyRequestController implements Initializable {
             else if(b2){
 
                 try {
-                    String customerDetails = customerModel.searchCustomerAlreadyExistOrNotByNic(cusId);
-                    if(customerDetails.isEmpty()){
+                    String customerDetails = requestBO.checkCustomerExistByNic(cusId);
+                    if(customerDetails.equals("")){
 
                         notification("Not Registered Customer, Please Add As New Customer");
 
                         try{
-                            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/AddNewCustomer.fxml"));
+                            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/AddNewCustomer.fxml"));
                             Parent root = fxmlLoader.load();
                             Scene scene = new Scene(root);
                             Stage stage = new Stage();
@@ -393,7 +394,7 @@ public class AddNewBuyRequestController implements Initializable {
 
         String requestId = null;
         try {
-            requestId = addNewRentRequestModel.generateNewRequestId();
+            requestId = requestBO.generateNewId();
             requestIdLabel.setText(requestId);
 
         } catch (SQLException | ClassNotFoundException e) {
@@ -408,8 +409,13 @@ public class AddNewBuyRequestController implements Initializable {
     public void setValuesToHouseTypeCmb(){
 
         try {
-            ObservableList<String> houseTypes = addNewRentRequestModel.getAllHouseTypes();
-            houseTypeCmb.setItems(houseTypes);
+            ObservableList<HouseTypeDTO> houseTypes = requestBO.getAllHouseTypes();
+            ObservableList<String> types = FXCollections.observableArrayList();
+
+            for(HouseTypeDTO x : houseTypes){
+                types.add(x.getHouseType());
+            }
+            houseTypeCmb.setItems(types);
 
         } catch (SQLException | ClassNotFoundException e) {
             e.printStackTrace();

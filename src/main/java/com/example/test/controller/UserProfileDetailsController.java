@@ -1,7 +1,9 @@
 package com.example.test.controller;
 
-import com.example.test.dto.SignUpDto;
-import com.example.test.model.UserProfileModel;
+import com.example.test.bo.BOFactory;
+import com.example.test.bo.custom.UserProfileBO;
+import com.example.test.dto.UserDTO;
+import com.example.test.dao.custom.impl.UserProfileDAOImpl;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -9,10 +11,10 @@ import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.AnchorPane;
-import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
 
 import java.net.URL;
+import java.sql.SQLException;
 import java.util.ResourceBundle;
 
 public class UserProfileDetailsController implements Initializable {
@@ -35,20 +37,10 @@ public class UserProfileDetailsController implements Initializable {
     @FXML
     private Button exitbtn;
 
-    private SignUpDto signUpDto;
+    private UserDTO userDto;
 
-    private UserProfileModel userProfileModel;
+    private UserProfileBO userProfileBO = (UserProfileBO) BOFactory.getInstance().getBO(BOFactory.BOType.USERPROFILE);
 
-    public  UserProfileDetailsController(){
-
-        try {
-            userProfileModel = new UserProfileModel();
-        }
-        catch (Exception e){
-
-            e.printStackTrace();
-        }
-    }
 
     @FXML
     void exitOnAction(ActionEvent event) {
@@ -62,12 +54,12 @@ public class UserProfileDetailsController implements Initializable {
 
         getUserDetails();
 
-        if(signUpDto!=null){
+        if(userDto !=null){
 
-            userName.setText(signUpDto.getUserName());
-            name.setText(signUpDto.getName());
-            email.setText(signUpDto.getEmail());
-            password.setText(signUpDto.getPassword());
+            userName.setText(userDto.getUserName());
+            name.setText(userDto.getName());
+            email.setText(userDto.getEmail());
+            password.setText(userDto.getPassword());
 
         }
         else {
@@ -80,7 +72,7 @@ public class UserProfileDetailsController implements Initializable {
 
         try{
 
-            signUpDto = userProfileModel.getUserProfileDetails();
+            userDto = userProfileBO.getUserDetails();
 
         }
         catch (Exception e){

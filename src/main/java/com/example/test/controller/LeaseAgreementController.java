@@ -1,9 +1,13 @@
 package com.example.test.controller;
 
-import com.example.test.dto.tm.*;
-import com.example.test.model.LeaseAgreementModel;
-import com.example.test.model.PaymentModel;
-import com.example.test.model.UnitModel;
+import com.example.test.bo.BOFactory;
+import com.example.test.bo.custom.LeaseAgreementBO;
+import com.example.test.dao.custom.impl.PaymentDAOImpl;
+import com.example.test.dao.custom.impl.TenantDAOImpl;
+import com.example.test.dao.custom.impl.UnitDAOImpl;
+import com.example.test.dto.LeaseAgreementDTO;
+import com.example.test.entity.Tenant;
+import com.example.test.view.tdm.LeaseAgreementTM;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -32,7 +36,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.sql.SQLException;
 import java.time.LocalDate;
-import java.time.Month;
 import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.ResourceBundle;
@@ -41,31 +44,31 @@ import java.util.Optional;
 public class LeaseAgreementController implements Initializable {
 
     @FXML
-    private TableView<LeaseAgreementTm> table;
+    private TableView<LeaseAgreementTM> table;
 
     @FXML
-    private TableColumn<LeaseAgreementTm, String> leaseIdColumn;
+    private TableColumn<LeaseAgreementTM, String> leaseIdColumn;
 
     @FXML
-    private TableColumn<LeaseAgreementTm, String> tenantIdColumn;
+    private TableColumn<LeaseAgreementTM, String> tenantIdColumn;
 
     @FXML
-    private TableColumn<LeaseAgreementTm, String> houseIdColumn;
+    private TableColumn<LeaseAgreementTM, String> houseIdColumn;
 
     @FXML
-    private TableColumn<LeaseAgreementTm, String> leaseTurnColumn;
+    private TableColumn<LeaseAgreementTM, String> leaseTurnColumn;
 
     @FXML
-    private TableColumn<LeaseAgreementTm, String> startDateColumn;
+    private TableColumn<LeaseAgreementTM, String> startDateColumn;
 
     @FXML
-    private TableColumn<LeaseAgreementTm, String> endDateColumn;
+    private TableColumn<LeaseAgreementTM, String> endDateColumn;
 
     @FXML
-    private TableColumn<LeaseAgreementTm, String> statusColumn;
+    private TableColumn<LeaseAgreementTM, String> statusColumn;
 
     @FXML
-    private TableColumn<LeaseAgreementTm, String> actionColumn;
+    private TableColumn<LeaseAgreementTM, String> actionColumn;
 
     @FXML
     private ComboBox<Integer> tableRowsCmb;
@@ -99,13 +102,8 @@ public class LeaseAgreementController implements Initializable {
 
 
     private boolean isOnlyActiveAgreements = false;
-    private ObservableList<LeaseAgreementTm> tableData;
-    private final LeaseAgreementModel leaseAgreementModel = new LeaseAgreementModel();
-    private final PaymentModel paymentModel = new PaymentModel();
-    private final UnitModel unitModel = new UnitModel();
-
-    public LeaseAgreementController() throws SQLException, ClassNotFoundException {
-    }
+    private ObservableList<LeaseAgreementTM> tableData;
+    private final LeaseAgreementBO leaseAgreementBO = (LeaseAgreementBO) BOFactory.getInstance().getBO(BOFactory.BOType.LEASEAGREEMENT);
 
 
     @FXML
@@ -123,7 +121,7 @@ public class LeaseAgreementController implements Initializable {
     void searchOnAction(ActionEvent event) {
 
 
-        ObservableList<LeaseAgreementTm> searchedLeases = FXCollections.observableArrayList();
+        ObservableList<LeaseAgreementTM> searchedLeases = FXCollections.observableArrayList();
 
         String selectedLeaseId = leaseIdCmb.getValue();
         String selectedTenantId = tenantIdCmb.getValue();
@@ -139,7 +137,7 @@ public class LeaseAgreementController implements Initializable {
 
         if (leaseIdSelected) {
 
-            ObservableList<LeaseAgreementTm> leasesById = getLeaseById(selectedLeaseId);
+            ObservableList<LeaseAgreementTM> leasesById = getLeaseById(selectedLeaseId);
 
             if (leasesById.isEmpty()) {
                 table.setItems(leasesById);
@@ -167,7 +165,7 @@ public class LeaseAgreementController implements Initializable {
 
         } else if (tenantIdSelected || houseIdSelected || leaseTurnSelected || statusSelected) {
 
-            ObservableList<LeaseAgreementTm> allLeases = tableData;
+            ObservableList<LeaseAgreementTM> allLeases = tableData;
             searchedLeases.addAll(allLeases);
 
             if (tenantIdSelected) {
@@ -189,14 +187,14 @@ public class LeaseAgreementController implements Initializable {
             table.setItems(searchedLeases);
 
         } else {
-            ObservableList<LeaseAgreementTm> allLeases = tableData;
+            ObservableList<LeaseAgreementTM> allLeases = tableData;
             table.setItems(allLeases);
         }
 
     }
 
 
-    public ObservableList<LeaseAgreementTm> getLeaseById(String leaseId) {
+    public ObservableList<LeaseAgreementTM> getLeaseById(String leaseId) {
 
         return FXCollections.observableArrayList(
                 tableData.stream()
@@ -205,7 +203,7 @@ public class LeaseAgreementController implements Initializable {
         );
     }
 
-    public ObservableList<LeaseAgreementTm> filterLeasesByTenantId(ObservableList<LeaseAgreementTm> leases, String tenantId) {
+    public ObservableList<LeaseAgreementTM> filterLeasesByTenantId(ObservableList<LeaseAgreementTM> leases, String tenantId) {
 
         return FXCollections.observableArrayList(
                 leases.stream()
@@ -215,7 +213,7 @@ public class LeaseAgreementController implements Initializable {
     }
 
 
-    public ObservableList<LeaseAgreementTm> filterLeasesByHouseId(ObservableList<LeaseAgreementTm> leases, String houseId) {
+    public ObservableList<LeaseAgreementTM> filterLeasesByHouseId(ObservableList<LeaseAgreementTM> leases, String houseId) {
 
         return FXCollections.observableArrayList(
                 leases.stream()
@@ -225,7 +223,7 @@ public class LeaseAgreementController implements Initializable {
     }
 
 
-    public ObservableList<LeaseAgreementTm> filterLeasesByLeaseTurn(ObservableList<LeaseAgreementTm> leases, String leaseTurn) {
+    public ObservableList<LeaseAgreementTM> filterLeasesByLeaseTurn(ObservableList<LeaseAgreementTM> leases, String leaseTurn) {
 
         return FXCollections.observableArrayList(
                 leases.stream()
@@ -235,7 +233,7 @@ public class LeaseAgreementController implements Initializable {
     }
 
 
-    public ObservableList<LeaseAgreementTm> filterLeasesByStatus(ObservableList<LeaseAgreementTm> leases, String status) {
+    public ObservableList<LeaseAgreementTM> filterLeasesByStatus(ObservableList<LeaseAgreementTM> leases, String status) {
 
         return FXCollections.observableArrayList(
                 leases.stream()
@@ -250,45 +248,45 @@ public class LeaseAgreementController implements Initializable {
     void sortCmbOnAction(ActionEvent event) {
 
         String sortType = sortCmb.getSelectionModel().getSelectedItem();
-        ObservableList<LeaseAgreementTm> leaseAgreementTms = FXCollections.observableArrayList(tableData);
+        ObservableList<LeaseAgreementTM> leaseAgreementTMS = FXCollections.observableArrayList(tableData);
 
         if (sortType == null) {
             return;
         }
 
-        Comparator<LeaseAgreementTm> comparator = null;
+        Comparator<LeaseAgreementTM> comparator = null;
 
         switch (sortType) {
             case "Lease ID (Ascending)":
-                comparator = Comparator.comparing(LeaseAgreementTm::getLeaseId);
+                comparator = Comparator.comparing(LeaseAgreementTM::getLeaseId);
                 break;
 
             case "Lease ID (Descending)":
-                comparator = Comparator.comparing(LeaseAgreementTm::getLeaseId).reversed();
+                comparator = Comparator.comparing(LeaseAgreementTM::getLeaseId).reversed();
                 break;
 
             case "Tenant ID (Ascending)":
-                comparator = Comparator.comparing(LeaseAgreementTm::getTenantId);
+                comparator = Comparator.comparing(LeaseAgreementTM::getTenantId);
                 break;
 
             case "Tenant ID (Descending)":
-                comparator = Comparator.comparing(LeaseAgreementTm::getTenantId).reversed();
+                comparator = Comparator.comparing(LeaseAgreementTM::getTenantId).reversed();
                 break;
 
             case "Start Date (Ascending)":
-                comparator = Comparator.comparing(LeaseAgreementTm::getStartDate);
+                comparator = Comparator.comparing(LeaseAgreementTM::getStartDate);
                 break;
 
             case "Start Date (Descending)":
-                comparator = Comparator.comparing(LeaseAgreementTm::getStartDate).reversed();
+                comparator = Comparator.comparing(LeaseAgreementTM::getStartDate).reversed();
                 break;
 
             case "End Date (Ascending)":
-                comparator = Comparator.comparing(LeaseAgreementTm::getEndDate);
+                comparator = Comparator.comparing(LeaseAgreementTM::getEndDate);
                 break;
 
             case "End Date (Descending)":
-                comparator = Comparator.comparing(LeaseAgreementTm::getEndDate).reversed();
+                comparator = Comparator.comparing(LeaseAgreementTM::getEndDate).reversed();
                 break;
 
             default:
@@ -296,8 +294,8 @@ public class LeaseAgreementController implements Initializable {
         }
 
         if (comparator != null) {
-            FXCollections.sort(leaseAgreementTms, comparator);
-            table.setItems(leaseAgreementTms);
+            FXCollections.sort(leaseAgreementTMS, comparator);
+            table.setItems(leaseAgreementTMS);
         }
     }
 
@@ -311,13 +309,13 @@ public class LeaseAgreementController implements Initializable {
             return;
         }
 
-        ObservableList<LeaseAgreementTm> leaseAgreementTms = FXCollections.observableArrayList();
+        ObservableList<LeaseAgreementTM> leaseAgreementTMS = FXCollections.observableArrayList();
 
         for (int i=0; i<value; i++){
-            leaseAgreementTms.add(tableData.get(i));
+            leaseAgreementTMS.add(tableData.get(i));
         }
 
-        table.setItems(leaseAgreementTms);
+        table.setItems(leaseAgreementTMS);
     }
 
 
@@ -340,7 +338,7 @@ public class LeaseAgreementController implements Initializable {
 
     public void tableSearch() {
 
-        FilteredList<LeaseAgreementTm> filteredData = new FilteredList<>(tableData, b -> true);
+        FilteredList<LeaseAgreementTM> filteredData = new FilteredList<>(tableData, b -> true);
 
         searchTxt.textProperty().addListener((observable, oldValue, newValue) -> {
             filteredData.setPredicate(lease -> {
@@ -369,7 +367,7 @@ public class LeaseAgreementController implements Initializable {
             });
         });
 
-        SortedList<LeaseAgreementTm> sortedData = new SortedList<>(filteredData);
+        SortedList<LeaseAgreementTM> sortedData = new SortedList<>(filteredData);
 
         sortedData.comparatorProperty().bind(table.comparatorProperty());
 
@@ -407,7 +405,7 @@ public class LeaseAgreementController implements Initializable {
     public void setHouseIdCmbValues(){
 
         try {
-            ObservableList<String> houseIds = leaseAgreementModel.getDistinctHouseIds();
+            ObservableList<String> houseIds = leaseAgreementBO.getDistinctHouseIds();
             houseIdCmb.setItems(houseIds);
         }catch (SQLException | ClassNotFoundException e) {
             e.printStackTrace();
@@ -424,9 +422,10 @@ public class LeaseAgreementController implements Initializable {
         ObservableList<String> tenantIds = FXCollections.observableArrayList();
         tenantIds.add("Select");
         try {
-            ObservableList<TenantTm> allTenants = paymentModel.getAllTenantIds();
+            TenantDAOImpl tenantDAO = new TenantDAOImpl();
+            ObservableList<Tenant> allTenants = tenantDAO.getAll();
 
-            for (TenantTm x: allTenants){
+            for (Tenant x: allTenants){
                 tenantIds.add(x.getTenantId());
             }
         } catch (SQLException | ClassNotFoundException e) {
@@ -446,7 +445,7 @@ public class LeaseAgreementController implements Initializable {
         ObservableList<String> leaseIds = FXCollections.observableArrayList();
         leaseIds.add("Select");
 
-        for (LeaseAgreementTm x : tableData){
+        for (LeaseAgreementTM x : tableData){
             leaseIds.add(x.getLeaseId());
         }
 
@@ -461,7 +460,7 @@ public class LeaseAgreementController implements Initializable {
         ObservableList<Integer> rows = FXCollections.observableArrayList();
         int count = 0;
 
-        for (LeaseAgreementTm x : tableData){
+        for (LeaseAgreementTM x : tableData){
             count++;
             rows.add(count);
 
@@ -487,9 +486,9 @@ public class LeaseAgreementController implements Initializable {
 
     public void setTableColumnsValue(){
 
-        Callback<TableColumn<LeaseAgreementTm, String>, TableCell<LeaseAgreementTm, String>> cellFoctory = (TableColumn<LeaseAgreementTm, String> param) -> {
+        Callback<TableColumn<LeaseAgreementTM, String>, TableCell<LeaseAgreementTM, String>> cellFoctory = (TableColumn<LeaseAgreementTM, String> param) -> {
 
-            final TableCell<LeaseAgreementTm, String> cell = new TableCell<LeaseAgreementTm, String>() {
+            final TableCell<LeaseAgreementTM, String> cell = new TableCell<LeaseAgreementTM, String>() {
                 @Override
                 public void updateItem(String item, boolean empty) {
                     super.updateItem(item, empty);
@@ -503,7 +502,7 @@ public class LeaseAgreementController implements Initializable {
                         Button status = new Button();
                         status.setStyle("-fx-background-radius: 100; -fx-text-fill: #FFFFFF;");
 
-                        LeaseAgreementTm currentAgreement = getTableView().getItems().get(getIndex());
+                        LeaseAgreementTM currentAgreement = getTableView().getItems().get(getIndex());
 
                         boolean isNearToEndLease = false;
 
@@ -540,9 +539,9 @@ public class LeaseAgreementController implements Initializable {
                         }
 
 
-                        Image image1 = new Image("C:\\Users\\Laptop World\\IdeaProjects\\test\\src\\main\\resources\\image\\email (2).png");
-                        Image image2 = new Image("C:\\Users\\Laptop World\\IdeaProjects\\test\\src\\main\\resources\\image\\contract(1).png");
-                        Image image3 = new Image("C:\\Users\\Laptop World\\IdeaProjects\\test\\src\\main\\resources\\image\\reply(1).png");
+                        Image image1 = new Image("C:\\Users\\PCWORLD\\IdeaProjects\\Semester_final\\src\\main\\resources\\assets\\image\\email (2).png");
+                        Image image2 = new Image("C:\\Users\\PCWORLD\\IdeaProjects\\Semester_final\\src\\main\\resources\\assets\\image\\contract(1).png");
+                        Image image3 = new Image("C:\\Users\\PCWORLD\\IdeaProjects\\Semester_final\\src\\main\\resources\\assets\\image\\reply(1).png");
 
 
                         ImageView mail = new ImageView();
@@ -567,7 +566,7 @@ public class LeaseAgreementController implements Initializable {
 
                         mail.setOnMouseClicked((MouseEvent event) -> {
 
-                            LeaseAgreementTm selectedLeaseAgreement = table.getSelectionModel().getSelectedItem();
+                            LeaseAgreementTM selectedLeaseAgreement = table.getSelectionModel().getSelectedItem();
 
                             if(selectedLeaseAgreement.getStatus().equals("Canceled") || selectedLeaseAgreement.getStatus().equals("Deleted")) {
 
@@ -586,7 +585,7 @@ public class LeaseAgreementController implements Initializable {
                             }
 
                             try{
-                                FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/MailSendFormInLeaseAgreement.fxml"));
+                                FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/MailSendFormInLeaseAgreement.fxml"));
                                 Parent root = fxmlLoader.load();
                                 MailSendFormInLeaseAgreementController mailSendFormInLeaseAgreementController = fxmlLoader.getController();
                                 mailSendFormInLeaseAgreementController.setSelectedTenantDetailsToSendMail(selectedLeaseAgreement,subject,message);
@@ -609,12 +608,12 @@ public class LeaseAgreementController implements Initializable {
 
                         reSign.setOnMouseClicked((MouseEvent event) -> {
 
-                            LeaseAgreementTm selectedLeaseAgreement = table.getSelectionModel().getSelectedItem();
+                            LeaseAgreementTM selectedLeaseAgreement = table.getSelectionModel().getSelectedItem();
 
                             if(selectedLeaseAgreement.getStatus().equals("Expired")){
 
                                 try{
-                                    FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/ReSignLeaseAgreement.fxml"));
+                                    FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/ReSignLeaseAgreement.fxml"));
                                     Parent root = fxmlLoader.load();
                                     ReSignLeaseAgreementController reSignLeaseAgreementController = fxmlLoader.getController();
                                     reSignLeaseAgreementController.setSelectedAgreementDetails(selectedLeaseAgreement);
@@ -636,12 +635,12 @@ public class LeaseAgreementController implements Initializable {
 
                         returnHouse.setOnMouseClicked((MouseEvent event) -> {
 
-                            LeaseAgreementTm selectedLeaseAgreement = table.getSelectionModel().getSelectedItem();
+                            LeaseAgreementTM selectedLeaseAgreement = table.getSelectionModel().getSelectedItem();
 
                             if(selectedLeaseAgreement.getStatus().equals("Expired")){
 
                                 try{
-                                    FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/HouseReturnConformation.fxml"));
+                                    FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/HouseReturnConformation.fxml"));
                                     Parent root = fxmlLoader.load();
                                     HouseReturnConformationController houseReturnConformationController = fxmlLoader.getController();
                                     houseReturnConformationController.setSelectedAgreementDetailsToReturn(selectedLeaseAgreement);
@@ -692,7 +691,13 @@ public class LeaseAgreementController implements Initializable {
     public void loadTable(){
 
         try {
-            tableData = leaseAgreementModel.getAllAgreements();
+            ObservableList<LeaseAgreementDTO> leaseAgreementDTOS = leaseAgreementBO.getAll();
+            ObservableList<LeaseAgreementTM> leaseAgreementTMS = FXCollections.observableArrayList();
+
+            for(LeaseAgreementDTO x : leaseAgreementDTOS){
+                leaseAgreementTMS.add(new LeaseAgreementTM().toTM(x));
+            }
+            tableData = leaseAgreementTMS;
             table.setItems(tableData);
 
         } catch (SQLException | ClassNotFoundException e) {
@@ -720,7 +725,7 @@ public class LeaseAgreementController implements Initializable {
 
     public void deleteOnAction(ActionEvent event) {
 
-        LeaseAgreementTm selectedLeaseAgreement = table.getSelectionModel().getSelectedItem();
+        LeaseAgreementTM selectedLeaseAgreement = table.getSelectionModel().getSelectedItem();
 
         if(selectedLeaseAgreement.getStatus().equals("Canceled")){
 
@@ -738,8 +743,16 @@ public class LeaseAgreementController implements Initializable {
             if (result.isPresent() && result.get() == yesButton) {
 
                 try {
-                    String response = leaseAgreementModel.makeLeaseAgreementDeleted(selectedLeaseAgreement);
-                    notification(response);
+                    LeaseAgreementDTO leaseAgreementDTO = new LeaseAgreementDTO();
+                    leaseAgreementDTO.setLeaseId(selectedLeaseAgreement.getLeaseId());
+                    leaseAgreementDTO.setStatus("Deleted");
+                    boolean response = leaseAgreementBO.updateLeaseAgreementStatus(leaseAgreementDTO);
+                    if(response){
+                        notification("The Lease Agreement Has Been Successfully Deleted");
+                    }
+                    else{
+                        notification("Unable To Delete The Lease Agreement, Please Try Again Later.");
+                    }
                 }
                 catch (SQLException | ClassNotFoundException e) {
                     e.printStackTrace();
@@ -759,7 +772,13 @@ public class LeaseAgreementController implements Initializable {
         isOnlyActiveAgreements = true;
 
         try {
-            tableData = leaseAgreementModel.getOnlyActiveAgreements();
+            ObservableList<LeaseAgreementDTO> leaseAgreementDTOS = leaseAgreementBO.getOnlyActiveAgreements();
+            ObservableList<LeaseAgreementTM> leaseAgreementTMS = FXCollections.observableArrayList();
+
+            for(LeaseAgreementDTO x : leaseAgreementDTOS){
+                leaseAgreementTMS.add(new LeaseAgreementTM().toTM(x));
+            }
+            tableData = leaseAgreementTMS;
             table.setItems(tableData);
 
         } catch (SQLException | ClassNotFoundException e) {

@@ -1,9 +1,10 @@
 package com.example.test.controller;
 
-import com.example.test.dto.CustomerDto;
-import com.example.test.dto.tm.CustomerTm;
-import com.example.test.model.AddNewCustomerModel;
-import com.example.test.validation.UserInputValidation;
+import com.example.test.bo.BOFactory;
+import com.example.test.bo.custom.CustomerBO;
+import com.example.test.dto.CustomerDTO;
+import com.example.test.view.tdm.CustomerTM;
+import com.example.test.UserInputValidation;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -76,9 +77,8 @@ public class AddNewCustomerController implements Initializable {
     @FXML
     private Label emailAlert;
 
-
-    private CustomerTm selectedCustomerToEdit;
-    private final AddNewCustomerModel addNewCustomerModel = new AddNewCustomerModel();
+    private CustomerTM selectedCustomerToEdit;
+    private CustomerBO customerBO = (CustomerBO) BOFactory.getInstance().getBO(BOFactory.BOType.CUSTOMER);
 
 
     @FXML
@@ -114,10 +114,10 @@ public class AddNewCustomerController implements Initializable {
 
             String id = customerIdLabel.getText();
 
-            CustomerDto customerDto = new CustomerDto(id,name,nic,address,phoneNo,jobTitle,livingArrangement,email);
+            CustomerDTO customerDto = new CustomerDTO(id,name,nic,address,phoneNo,jobTitle,livingArrangement,email);
 
             try {
-               String  response = addNewCustomerModel.addCustomer(customerDto);
+               String response = customerBO.add(customerDto);
                notification(response);
 
                if(response.equals("Successfully add the new customer")){
@@ -182,10 +182,10 @@ public class AddNewCustomerController implements Initializable {
 
             String id = customerIdLabel.getText();
 
-            CustomerDto customerDto = new CustomerDto(id,name,nic,address,phoneNo,jobTitle,livingArrangement,email);
+            CustomerDTO customerDto = new CustomerDTO(id,name,nic,address,phoneNo,jobTitle,livingArrangement,email);
             String response = null;
             try {
-                response = addNewCustomerModel.updateCustomer(customerDto);
+                response = customerBO.update(customerDto);
                 notification(response);
 
             } catch (SQLException | ClassNotFoundException e) {
@@ -240,7 +240,7 @@ public class AddNewCustomerController implements Initializable {
     public void generateNextCustomerId(){
 
         try {
-            String id = addNewCustomerModel.generateNextCustomerId();
+            String id = customerBO.generateNewId();
             customerIdLabel.setText(id);
 
         } catch (SQLException | ClassNotFoundException e) {
@@ -252,7 +252,7 @@ public class AddNewCustomerController implements Initializable {
     }
 
 
-    public void selectedCustomerData(CustomerTm customerTm){
+    public void selectedCustomerData(CustomerTM customerTm){
 
         selectedCustomerToEdit = customerTm;
         customerIdLabel.setText(selectedCustomerToEdit.getCustomerId());
@@ -264,8 +264,9 @@ public class AddNewCustomerController implements Initializable {
         livingArrangementCmb.setValue(selectedCustomerToEdit.getLivingArrangement());
 
         try {
-           String  email = addNewCustomerModel.getEmailByCustomerId(selectedCustomerToEdit.getCustomerId());
-            emailTxt.setText(email);
+
+            CustomerDTO customerDTO = customerBO.search(selectedCustomerToEdit.getCustomerId());
+            emailTxt.setText(customerDTO.getEmail());
         }
         catch (SQLException | ClassNotFoundException e) {
             e.printStackTrace();

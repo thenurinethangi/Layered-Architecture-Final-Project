@@ -1,8 +1,13 @@
 package com.example.test.controller;
 
-import com.example.test.dto.TenantDto;
-import com.example.test.dto.tm.TenantTm;
-import com.example.test.model.TenantModel;
+import com.example.test.bo.BOFactory;
+import com.example.test.bo.custom.TenantBO;
+import com.example.test.dao.custom.impl.UnitDAOImpl;
+import com.example.test.dto.TenantDTO;
+import com.example.test.dto.UnitDTO;
+import com.example.test.entity.Unit;
+import com.example.test.view.tdm.TenantTM;
+import com.example.test.dao.custom.impl.TenantDAOImpl;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 
@@ -43,11 +48,11 @@ public class TenantDetailsController {
     @FXML
     private Label remainingSecurityPayment;
 
-    private final TenantModel tenantModel = new TenantModel();
-    private TenantTm selectedTenant;
+    private final TenantBO tenantBO = (TenantBO) BOFactory.getInstance().getBO(BOFactory.BOType.TENANT);
+    private TenantTM selectedTenant;
 
 
-    public void setSelectedTenantDetails(TenantTm tenant){
+    public void setSelectedTenantDetails(TenantTM tenant){
 
         selectedTenant = tenant;
 
@@ -67,12 +72,12 @@ public class TenantDetailsController {
     public void setAdditionalDetails(){
 
         try {
-            TenantDto tenantDto = tenantModel.getMoreTenantDetails(selectedTenant.getTenantId());
+            TenantDTO tenantDto = tenantBO.search(selectedTenant.getTenantId());
             remainingSecurityPayment.setText(String.valueOf(tenantDto.getSecurityPaymentRemain()));
             email.setText(tenantDto.getEmail());
 
-            String type = tenantModel.getHouseTypeByHouseId(selectedTenant.getHouseId());
-            houseType.setText(type);
+            UnitDTO unitDTO = tenantBO.getUnitDetails(selectedTenant.getHouseId());
+            houseType.setText(unitDTO.getHouseType());
 
         } catch (SQLException e) {
             throw new RuntimeException(e);

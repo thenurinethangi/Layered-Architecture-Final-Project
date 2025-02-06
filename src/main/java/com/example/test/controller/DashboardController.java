@@ -1,7 +1,10 @@
 package com.example.test.controller;
 
-import com.example.test.dto.tm.*;
-import com.example.test.model.*;
+import com.example.test.bo.BOFactory;
+import com.example.test.bo.custom.*;
+import com.example.test.dao.custom.impl.*;
+import com.example.test.dto.*;
+import com.example.test.entity.*;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -187,30 +190,27 @@ public class DashboardController implements Initializable {
 
     private ArrayList<Image> images = new ArrayList<>();
     private int count = 0;
-    private final RequestModel requestModel = new RequestModel();
-    private final CustomerModel customerModel = new CustomerModel();
-    private final UnitModel unitModel = new UnitModel();
-    private final TenantModel tenantModel = new TenantModel();
-    private final OwnerModel ownerModel = new OwnerModel();
-    private final EmployeeModel employeeModel = new EmployeeModel();
-    private final MaintenanceRequestModel maintenanceRequestModel = new MaintenanceRequestModel();
-    private final FloorModel floorModel = new FloorModel();
-    private final HouseTypeModel houseTypeModel = new HouseTypeModel();
-    private final LeaseAgreementModel leaseAgreementModel = new LeaseAgreementModel();
-    private final PurchaseAgreementModel purchaseAgreementModel = new PurchaseAgreementModel();
-    private final PaymentModel paymentModel = new PaymentModel();
-    private final ExpenseModel expenseModel = new ExpenseModel();
+    private final RequestBO requestBO = (RequestBO) BOFactory.getInstance().getBO(BOFactory.BOType.REQUEST);
+    private final CustomerBO customerBO = (CustomerBO) BOFactory.getInstance().getBO(BOFactory.BOType.CUSTOMER);
+    private final UnitBO unitBO = (UnitBO) BOFactory.getInstance().getBO(BOFactory.BOType.UNIT);
+    private final TenantBO tenantBO = (TenantBO) BOFactory.getInstance().getBO(BOFactory.BOType.TENANT);
+    private final OwnerBO ownerBO = (OwnerBO) BOFactory.getInstance().getBO(BOFactory.BOType.OWNER);
+    private final EmployeeBO employeeBO = (EmployeeBO) BOFactory.getInstance().getBO(BOFactory.BOType.EMPLOYEE);
+    private final MaintenanceRequestBO maintenanceRequestBO = (MaintenanceRequestBO) BOFactory.getInstance().getBO(BOFactory.BOType.MAINTENANCEREQUEST);
+    private final FloorBO floorBO = (FloorBO) BOFactory.getInstance().getBO(BOFactory.BOType.FLOOR);
+    private final HouseTypeBO houseTypeBO = (HouseTypeBO) BOFactory.getInstance().getBO(BOFactory.BOType.HOUSETYPE);
+    private final LeaseAgreementBO leaseAgreementBO = (LeaseAgreementBO) BOFactory.getInstance().getBO(BOFactory.BOType.LEASEAGREEMENT);
+    private final PurchaseAgreementBO purchaseAgreementBO = (PurchaseAgreementBO) BOFactory.getInstance().getBO(BOFactory.BOType.PURCHASEAGREEMENT);
+    private final PaymentBO paymentBO = (PaymentBO) BOFactory.getInstance().getBO(BOFactory.BOType.PAYMENT);
+    private final ExpenseBO expenseBO = (ExpenseBO) BOFactory.getInstance().getBO(BOFactory.BOType.EXPENSE);
 
-
-    public DashboardController() throws SQLException, ClassNotFoundException {
-    }
 
 
     @FXML
     void availableOnAction(ActionEvent event) {
 
         try {
-            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/Unit.fxml"));
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/Unit.fxml"));
             AnchorPane anchorPane = fxmlLoader.load();
             UnitController unitController = fxmlLoader.getController();
             unitController.setTableToOnlyAvailableUnits();
@@ -295,7 +295,7 @@ public class DashboardController implements Initializable {
     void employeeOnAction(ActionEvent event) {
 
         try {
-            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/Employee.fxml"));
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/Employee.fxml"));
             AnchorPane anchorPane = fxmlLoader.load();
             bodyPane.getChildren().clear();
             bodyPane.getChildren().add(anchorPane);
@@ -312,7 +312,7 @@ public class DashboardController implements Initializable {
     void expenceOnAction(ActionEvent event) {
 
         try {
-            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/Expense.fxml"));
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/Expense.fxml"));
             AnchorPane anchorPane = fxmlLoader.load();
             bodyPane.getChildren().clear();
             bodyPane.getChildren().add(anchorPane);
@@ -328,7 +328,7 @@ public class DashboardController implements Initializable {
     void floorOnAction(ActionEvent event) {
 
         try {
-            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/Floor.fxml"));
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/Floor.fxml"));
             AnchorPane anchorPane = fxmlLoader.load();
             FloorController floorController = fxmlLoader.getController();
             floorController.setFloorTextInvisible();
@@ -347,7 +347,7 @@ public class DashboardController implements Initializable {
     void houseTypeOnAction(ActionEvent event) {
 
         try {
-            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/HouseType.fxml"));
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/HouseType.fxml"));
             AnchorPane anchorPane = fxmlLoader.load();
             HouseTypeController houseTypeController = fxmlLoader.getController();
             houseTypeController.setHouseTypeTextInvisible();
@@ -365,7 +365,7 @@ public class DashboardController implements Initializable {
     void incomeOnAction(ActionEvent event) {
 
         try {
-            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/Payment.fxml"));
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/Payment.fxml"));
             AnchorPane anchorPane = fxmlLoader.load();
             bodyPane.getChildren().clear();
             bodyPane.getChildren().add(anchorPane);
@@ -382,7 +382,7 @@ public class DashboardController implements Initializable {
     void maintanceOnAction(ActionEvent event) {
 
         try {
-            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/MaintenanceRequest.fxml"));
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/MaintenanceRequest.fxml"));
             AnchorPane anchorPane = fxmlLoader.load();
             MaintenanceRequestController maintenanceRequestController = fxmlLoader.getController();
             maintenanceRequestController.setOnlyProgressRequest();
@@ -400,7 +400,7 @@ public class DashboardController implements Initializable {
     void ownerOnAction(ActionEvent event) {
 
         try {
-            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/Owner.fxml"));
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/Owner.fxml"));
             AnchorPane anchorPane = fxmlLoader.load();
             bodyPane.getChildren().clear();
             bodyPane.getChildren().add(anchorPane);
@@ -421,7 +421,7 @@ public class DashboardController implements Initializable {
     void salesOnAction(ActionEvent event) {
 
         try {
-            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/Request.fxml"));
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/Request.fxml"));
             AnchorPane anchorPane = fxmlLoader.load();
             RequestController requestController = fxmlLoader.getController();
             requestController.getOnlyClosedRequest();
@@ -439,7 +439,7 @@ public class DashboardController implements Initializable {
     void tenantsOnAction(ActionEvent event) {
 
         try {
-            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/Tenant.fxml"));
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/Tenant.fxml"));
             AnchorPane anchorPane = fxmlLoader.load();
             bodyPane.getChildren().clear();
             bodyPane.getChildren().add(anchorPane);
@@ -455,7 +455,7 @@ public class DashboardController implements Initializable {
     void totalCustomerOnAction(ActionEvent event) {
 
         try {
-            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/Customer.fxml"));
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/Customer.fxml"));
             AnchorPane anchorPane = fxmlLoader.load();
             bodyPane.getChildren().clear();
             bodyPane.getChildren().add(anchorPane);
@@ -471,7 +471,7 @@ public class DashboardController implements Initializable {
     void unitOnAction(ActionEvent event) {
 
         try {
-            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/Unit.fxml"));
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/Unit.fxml"));
             AnchorPane anchorPane = fxmlLoader.load();
             bodyPane.getChildren().clear();
             bodyPane.getChildren().add(anchorPane);
@@ -488,7 +488,7 @@ public class DashboardController implements Initializable {
     public void leaseAgreementOnAction(ActionEvent event) {
 
         try {
-            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/LeaseAgreement.fxml"));
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/LeaseAgreement.fxml"));
             AnchorPane anchorPane = fxmlLoader.load();
             LeaseAgreementController leaseAgreementController = fxmlLoader.getController();
             leaseAgreementController.setOnlyActiveAgreement();
@@ -507,7 +507,7 @@ public class DashboardController implements Initializable {
     public void purchaseAgreemntOnAction(ActionEvent event) {
 
         try {
-            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/PurchaseAgreement.fxml"));
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/PurchaseAgreement.fxml"));
             AnchorPane anchorPane = fxmlLoader.load();
             bodyPane.getChildren().clear();
             bodyPane.getChildren().add(anchorPane);
@@ -523,11 +523,11 @@ public class DashboardController implements Initializable {
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
 
-        Image image1 = new Image("C:\\Users\\Laptop World\\IdeaProjects\\test\\src\\main\\resources\\image\\image (1).png");
-        Image image2 = new Image("C:\\Users\\Laptop World\\IdeaProjects\\test\\src\\main\\resources\\image\\pngtree-smart-business-man-png-image_10275552-removebg-preview.png");
-        Image image3 = new Image("C:\\Users\\Laptop World\\IdeaProjects\\test\\src\\main\\resources\\image\\image (3).png");
-        Image image4 = new Image("C:\\Users\\Laptop World\\IdeaProjects\\test\\src\\main\\resources\\image\\png-transparent-business-man-young-men-executive-thumbnail-removebg-preview.png");
-        Image image5 = new Image("C:\\Users\\Laptop World\\IdeaProjects\\test\\src\\main\\resources\\image\\pngtreee (1).png");
+        Image image1 = new Image("C:\\Users\\PCWORLD\\IdeaProjects\\Semester_final\\src\\main\\resources\\assets\\image\\image (1).png");
+        Image image2 = new Image("C:\\Users\\PCWORLD\\IdeaProjects\\Semester_final\\src\\main\\resources\\assets\\image\\pngtree-smart-business-man-png-image_10275552-removebg-preview.png");
+        Image image3 = new Image("C:\\Users\\PCWORLD\\IdeaProjects\\Semester_final\\src\\main\\resources\\assets\\image\\image (3).png");
+        Image image4 = new Image("C:\\Users\\PCWORLD\\IdeaProjects\\Semester_final\\src\\main\\resources\\assets\\image\\png-transparent-business-man-young-men-executive-thumbnail-removebg-preview.png");
+        Image image5 = new Image("C:\\Users\\PCWORLD\\IdeaProjects\\Semester_final\\src\\main\\resources\\assets\\image\\pngtreee (1).png");
 
         images.add(image4);
         images.add(image1);
@@ -559,7 +559,7 @@ public class DashboardController implements Initializable {
     public void calculateTotalSales(){
 
         try{
-            ObservableList<RequestTm> totalSales = requestModel.getOnlyClosedRequests();
+            ObservableList<RequestDTO> totalSales = requestBO.getOnlyClosedRequests();
             salestxt.setText(String.valueOf(totalSales.size()));
 
         } catch (SQLException | ClassNotFoundException e) {
@@ -574,7 +574,7 @@ public class DashboardController implements Initializable {
     public void calculateTotalCustomers(){
 
         try{
-            ObservableList<CustomerTm> customers = customerModel.getAllCustomers();
+            ObservableList<CustomerDTO> customers = customerBO.getAll();
             customertxt.setText(String.valueOf(customers.size()));
 
         } catch (SQLException | ClassNotFoundException e) {
@@ -588,10 +588,10 @@ public class DashboardController implements Initializable {
     public void calculateTotalUnits(){
 
         try{
-            ObservableList<UnitTm> units = unitModel.loadTable();
-            unitstxt.setText(String.valueOf(units.size()));
+            ObservableList<UnitDTO> unitTMS = unitBO.getAll();
+            unitstxt.setText(String.valueOf(unitTMS.size()));
 
-        } catch (SQLException e) {
+        } catch (SQLException |ClassNotFoundException e) {
             e.printStackTrace();
             System.err.println("Error while calculating the total units: " + e.getMessage());
             notification("An error occurred while calculating the total units. Please try again or contact support.");
@@ -602,8 +602,8 @@ public class DashboardController implements Initializable {
     public void calculateAvailableUnits(){
 
         try{
-            ObservableList<UnitTm> units = unitModel.getOnlyAvailableUnits();
-            availableUnittxt.setText(String.valueOf(units.size()));
+            ObservableList<UnitDTO> unitTMS = unitBO.getOnlyAvailableUnits();
+            availableUnittxt.setText(String.valueOf(unitTMS.size()));
 
         } catch (SQLException | ClassNotFoundException e) {
             e.printStackTrace();
@@ -617,7 +617,7 @@ public class DashboardController implements Initializable {
     public void calculateTotalTenants(){
 
         try{
-            ObservableList<TenantTm> tenants = tenantModel.getAllTenants();
+            ObservableList<TenantDTO> tenants = tenantBO.getAll();
             tenantstxt.setText(String.valueOf(tenants.size()));
 
         } catch (SQLException | ClassNotFoundException e) {
@@ -632,7 +632,7 @@ public class DashboardController implements Initializable {
     public void calculateTotalOwners(){
 
         try{
-            ObservableList<OwnerTm> owners = ownerModel.getAllOwners();
+            ObservableList<OwnerDTO> owners = ownerBO.getAll();
             ownerstxt.setText(String.valueOf(owners.size()));
         }
         catch (SQLException | ClassNotFoundException e) {
@@ -646,10 +646,10 @@ public class DashboardController implements Initializable {
     public void calculateTotalEmployees(){
 
         try{
-            ObservableList<EmployeeTm> employees = employeeModel.getAllEmployees();
+            ObservableList<EmployeeDTO> employees = employeeBO.getAll();
             employeetxt.setText(String.valueOf(employees.size()));
         }
-        catch (SQLException e) {
+        catch (SQLException |ClassNotFoundException e) {
             e.printStackTrace();
             System.err.println("Error while calculating the total employees: " + e.getMessage());
             notification("An error occurred while calculating the total employees. Please try again or contact support.");
@@ -660,7 +660,7 @@ public class DashboardController implements Initializable {
     public void calculateTotalMaintenance(){
 
         try{
-            ObservableList<MaintenanceRequestTm> requests = maintenanceRequestModel.getAllInProgressRequests();
+            ObservableList<MaintenanceRequestDTO> requests = maintenanceRequestBO.getAllInProgressRequests();
             maintancetxt.setText(String.valueOf(requests.size()));
         }
         catch (SQLException | ClassNotFoundException e) {
@@ -674,10 +674,10 @@ public class DashboardController implements Initializable {
     public void calculateTotalFloors(){
 
         try{
-            ObservableList<FloorTm> floors = floorModel.loadTableData();
+            ObservableList<FloorDTO> floors = floorBO.getAll();
             floortxt.setText(String.valueOf(floors.size()));
         }
-        catch (SQLException e) {
+        catch (SQLException | ClassNotFoundException e) {
             e.printStackTrace();
             System.err.println("Error while calculating the total floors: " + e.getMessage());
             notification("An error occurred while calculating the total floors. Please try again or contact support.");
@@ -688,10 +688,10 @@ public class DashboardController implements Initializable {
     public void calculateTotalHouseTypes(){
 
         try{
-            ObservableList<HouseTypeTm> houseTypes = houseTypeModel.loadTableData();
+            ObservableList<HouseTypeDTO> houseTypes = houseTypeBO.getAll();
             houseTypestxt.setText(String.valueOf(houseTypes.size()));
         }
-        catch (SQLException e) {
+        catch (SQLException | ClassNotFoundException e) {
             e.printStackTrace();
             System.err.println("Error while calculating the total house types: " + e.getMessage());
             notification("An error occurred while calculating the total house types. Please try again or contact support.");
@@ -701,7 +701,7 @@ public class DashboardController implements Initializable {
     public void calculateTotalLeaseAgreement(){
 
         try{
-            ObservableList<LeaseAgreementTm> leaseAgreements = leaseAgreementModel.getOnlyActiveAgreements();
+            ObservableList<LeaseAgreementDTO> leaseAgreements = leaseAgreementBO.getOnlyActiveAgreements();
             leaseAgreementTxt.setText(String.valueOf(leaseAgreements.size()));
         }
         catch (SQLException | ClassNotFoundException e) {
@@ -714,7 +714,7 @@ public class DashboardController implements Initializable {
     public void calculateTotalPurchaseAgreement(){
 
         try{
-            ObservableList<PurchaseAgreementTm> agreements = purchaseAgreementModel.getAllAgreements();
+            ObservableList<PurchaseAgreementDTO> agreements = purchaseAgreementBO.getAll();
             purchaseAgreementTxt.setText(String.valueOf(agreements.size()));
         }
         catch (SQLException | ClassNotFoundException e) {
@@ -730,7 +730,7 @@ public class DashboardController implements Initializable {
         int tot = 0;
 
         try {
-            double total = paymentModel.getTotalIncome();
+            double total = paymentBO.getTotalIncome();
             tot = (int) total;
             NumberFormat numberFormat = NumberFormat.getInstance();
             incometxt.setText(numberFormat.format(tot) + " LKR");
@@ -750,7 +750,7 @@ public class DashboardController implements Initializable {
         int tot = 0;
 
         try {
-            double total = expenseModel.getTotalExpense();
+            double total = expenseBO.getTotalExpense();
             tot = (int) total;
             NumberFormat numberFormat = NumberFormat.getInstance();
             expencetxt.setText(numberFormat.format(tot) + " LKR");

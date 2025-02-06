@@ -1,12 +1,12 @@
 package com.example.test.controller;
 
-import com.example.test.dto.SignInDto;
-import com.example.test.dto.SignInQuestionsDto;
-import com.example.test.model.ForgotPasswordQuestionsModel;
+import com.example.test.bo.BOFactory;
+import com.example.test.bo.custom.SignInBO;
+import com.example.test.dto.UserDTO;
+import com.example.test.dto.UserValidationDTO;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
-import javafx.fxml.Initializable;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -14,10 +14,10 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
+import lombok.Setter;
 
 import java.io.IOException;
-import java.net.URL;
-import java.util.ResourceBundle;
+import java.sql.SQLException;
 
 public class ForgotPasswordQuestionsController {
 
@@ -38,21 +38,9 @@ public class ForgotPasswordQuestionsController {
 
     private Stage stage;
 
+    @Setter
     private String userName;
-    private SignInController signInController;
-    private ForgotPasswordQuestionsModel forgotPasswordQuestionsModel;
-
-    public ForgotPasswordQuestionsController(){
-
-        signInController = new SignInController();
-        try {
-            forgotPasswordQuestionsModel = new ForgotPasswordQuestionsModel();
-        }
-        catch (Exception e){
-            e.printStackTrace();
-        }
-
-    }
+    private SignInBO signInBO = (SignInBO) BOFactory.getInstance().getBO(BOFactory.BOType.SIGNIN);
 
 
     @FXML
@@ -81,21 +69,22 @@ public class ForgotPasswordQuestionsController {
 
         else{
 
-           SignInQuestionsDto signInQuestionsDto = new SignInQuestionsDto(fAnswer,sAnswer,tAnswer);
-           signInQuestionsDto.setUserName(userName);
+           UserValidationDTO userValidationDto = new UserValidationDTO(fAnswer,sAnswer,tAnswer,userName);
 
            try {
-               String result = forgotPasswordQuestionsModel.getPassword(signInQuestionsDto);
+               String result = signInBO.getPassword(userValidationDto);
 
                if(!result.equals("This User Name does not exit") && !result.equals("Something wrong with getting password back, try again later") && !result.equals("Can't get password because your answers are incorrect")){
 
-                   SignInDto signInDto = new SignInDto(userName,result);
+                   UserDTO userDTO = new UserDTO();
+                   userDTO.setUserName(userName);
+                   userDTO.setPassword(result);
 
-                   FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/SignIn.fxml"));
+                   FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/SignIn.fxml"));
                    Parent root = fxmlLoader.load();
 
                    SignInController controller = fxmlLoader.getController();
-                   controller.setData(signInDto);
+                   controller.setData(userDTO);
 
                    Scene scene = new Scene(root);
                    stage = (Stage)((Node)event.getSource()).getScene().getWindow();
@@ -128,11 +117,6 @@ public class ForgotPasswordQuestionsController {
         fquestion.setText("");
         squestion.setText("");
         tquestion.setText("");
-    }
-
-    public void setUserName(String u){
-
-        this.userName = u;
     }
 
 }

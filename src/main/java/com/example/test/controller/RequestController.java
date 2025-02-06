@@ -1,11 +1,14 @@
 package com.example.test.controller;
 
-import com.example.test.dto.tm.CustomerTm;
-import com.example.test.dto.tm.HouseTypeTm;
-import com.example.test.dto.tm.RequestTm;
-import com.example.test.dto.tm.TenantTm;
-import com.example.test.model.HouseTypeModel;
-import com.example.test.model.RequestModel;
+import com.example.test.bo.BOFactory;
+import com.example.test.bo.custom.RequestBO;
+import com.example.test.dto.HouseTypeDTO;
+import com.example.test.dto.RequestDTO;
+import com.example.test.entity.HouseType;
+import com.example.test.entity.Request;
+import com.example.test.view.tdm.RequestTM;
+import com.example.test.dao.custom.impl.HouseTypeDAOImpl;
+import com.example.test.dao.custom.impl.RequestDAOImpl;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -22,7 +25,6 @@ import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
 import javafx.stage.Stage;
@@ -38,7 +40,6 @@ import javafx.util.Duration;
 import org.controlsfx.control.Notifications;
 
 import java.net.URL;
-import java.sql.SQLException;
 import java.util.Comparator;
 import java.util.Optional;
 import java.util.ResourceBundle;
@@ -103,58 +104,44 @@ public class RequestController implements Initializable {
     private ComboBox<String> houseTypeCmb;
 
     @FXML
-    private TableView<RequestTm> table;
+    private TableView<RequestTM> table;
     @FXML
-    private TableColumn<RequestTm, String> requestIdColumn;
+    private TableColumn<RequestTM, String> requestIdColumn;
     @FXML
-    private TableColumn<RequestTm, String> customerIdColumn;
+    private TableColumn<RequestTM, String> customerIdColumn;
     @FXML
-    private TableColumn<RequestTm, String> rentOrBuyColumn;
+    private TableColumn<RequestTM, String> rentOrBuyColumn;
     @FXML
-    private TableColumn<RequestTm, String> houseTypeColumn;
+    private TableColumn<RequestTM, String> houseTypeColumn;
     @FXML
-    private TableColumn<RequestTm, String> leaseTurnDesireColumn;
+    private TableColumn<RequestTM, String> leaseTurnDesireColumn;
     @FXML
-    private TableColumn<RequestTm, String> allDocumentsProvidedColumn;
+    private TableColumn<RequestTM, String> allDocumentsProvidedColumn;
     @FXML
-    private TableColumn<RequestTm, String> qualifiedCustomerOrNotColumn;
+    private TableColumn<RequestTM, String> qualifiedCustomerOrNotColumn;
     @FXML
-    TableColumn<RequestTm, String> agreesToAllTermsAndConditionsColumn;
+    TableColumn<RequestTM, String> agreesToAllTermsAndConditionsColumn;
     @FXML
-    TableColumn<RequestTm, String> isPaymentsCompletedColumn;
+    TableColumn<RequestTM, String> isPaymentsCompletedColumn;
     @FXML
-    TableColumn<RequestTm, String> customerRequestStatusColumn;
+    TableColumn<RequestTM, String> customerRequestStatusColumn;
     @FXML
-    TableColumn<RequestTm, String> requestStatusColumn;
+    TableColumn<RequestTM, String> requestStatusColumn;
     @FXML
-    TableColumn<RequestTm, String> houseIdColumn;
+    TableColumn<RequestTM, String> houseIdColumn;
     @FXML
-    TableColumn<RequestTm, String> actionColumn;
+    TableColumn<RequestTM, String> actionColumn;
 
 
-    private RequestModel requestModel;
-    private HouseTypeModel houseTypeModel;
-    private ObservableList<RequestTm> tableData;
-
-    public RequestController() {
-
-        try{
-            requestModel = new RequestModel();
-            houseTypeModel = new HouseTypeModel();
-        }
-        catch (SQLException | ClassNotFoundException e) {
-            e.printStackTrace();
-            System.err.println("Error while request page: " + e.getMessage());
-            notification("An error occurred while request page. Please try again or contact support.");
-        }
-    }
+    private RequestBO requestBO = (RequestBO) BOFactory.getInstance().getBO(BOFactory.BOType.REQUEST);
+    private ObservableList<RequestTM> tableData;
 
 
     @FXML
     void addNewBuyRequestOnAction(ActionEvent event) {
 
         try{
-            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/AddNewBuyRequest.fxml"));
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/AddNewBuyRequest.fxml"));
             Parent root = fxmlLoader.load();
             Scene scene = new Scene(root);
             Stage stage = new Stage();
@@ -173,7 +160,7 @@ public class RequestController implements Initializable {
     void addNewRentRequestOnAction(ActionEvent event) {
 
         try{
-            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/AddNewRentRequest.fxml"));
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/AddNewRentRequest.fxml"));
             Parent root = fxmlLoader.load();
             Scene scene = new Scene(root);
             Stage stage = new Stage();
@@ -192,7 +179,7 @@ public class RequestController implements Initializable {
     @FXML
     void deleteOnAction(ActionEvent event) {
 
-        RequestTm selectedRequest = table.getSelectionModel().getSelectedItem();
+        RequestTM selectedRequest = table.getSelectionModel().getSelectedItem();
 
         if (selectedRequest == null) {
             notification("No request selected to delete.");
@@ -241,11 +228,11 @@ public class RequestController implements Initializable {
     }
 
 
-    public void deleteTheSelectedRequest(Optional<ButtonType> response, RequestTm selectedRequest) {
+    public void deleteTheSelectedRequest(Optional<ButtonType> response, RequestTM selectedRequest) {
 
         if (response.isPresent() && response.get() == ButtonType.OK) {
             try {
-                String result = requestModel.deleteSelectedRequest(selectedRequest);
+                String result = requestBO.delete(new RequestDTO().toDTO(selectedRequest));
                 notification(result);
                 loadTable();
             } catch (SQLException | ClassNotFoundException e) {
@@ -261,7 +248,7 @@ public class RequestController implements Initializable {
     @FXML
     void editOnAction(ActionEvent event) {
 
-        RequestTm selectedRequest = table.getSelectionModel().getSelectedItem();
+        RequestTM selectedRequest = table.getSelectionModel().getSelectedItem();
 
         if(selectedRequest==null){
             return;
@@ -273,7 +260,7 @@ public class RequestController implements Initializable {
         }
 
         try{
-            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/EditRentRequest.fxml"));
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/EditRentRequest.fxml"));
             Parent root = fxmlLoader.load();
             EditRentRequestController editRentRequestController = fxmlLoader.getController();
             editRentRequestController.setSelectedRequestData(selectedRequest);
@@ -302,7 +289,7 @@ public class RequestController implements Initializable {
     @FXML
     void searchOnAction(ActionEvent event) {
 
-        ObservableList<RequestTm> searchedRequests = FXCollections.observableArrayList();
+        ObservableList<RequestTM> searchedRequests = FXCollections.observableArrayList();
 
         String selectedRequestId = requestIdCmb.getValue();
         String selectedCustomerId = customerIdCmb.getValue();
@@ -315,7 +302,7 @@ public class RequestController implements Initializable {
         boolean houseTypeSelected = selectedHouseType != null && !selectedHouseType.equals("Select");
 
         if (requestIdSelected) {
-            ObservableList<RequestTm> requestsById = getRequestsByRequestId(selectedRequestId);
+            ObservableList<RequestTM> requestsById = getRequestsByRequestId(selectedRequestId);
 
             if (requestsById.isEmpty()) {
                 table.setItems(requestsById);
@@ -323,19 +310,19 @@ public class RequestController implements Initializable {
                 searchedRequests.addAll(requestsById);
 
                 if (customerIdSelected) {
-                    ObservableList<RequestTm> filteredByCustomerId = filterRequestsByCustomerId(searchedRequests, selectedCustomerId);
+                    ObservableList<RequestTM> filteredByCustomerId = filterRequestsByCustomerId(searchedRequests, selectedCustomerId);
                     searchedRequests.clear();
                     searchedRequests.addAll(filteredByCustomerId);
                 }
 
                 if (rentOrBuySelected) {
-                    ObservableList<RequestTm> filteredByRentOrBuy = filterRequestsByRentOrBuy(searchedRequests, selectedRentOrBuy);
+                    ObservableList<RequestTM> filteredByRentOrBuy = filterRequestsByRentOrBuy(searchedRequests, selectedRentOrBuy);
                     searchedRequests.clear();
                     searchedRequests.addAll(filteredByRentOrBuy);
                 }
 
                 if (houseTypeSelected) {
-                    ObservableList<RequestTm> filteredByHouseType = filterRequestsByHouseType(searchedRequests, selectedHouseType);
+                    ObservableList<RequestTM> filteredByHouseType = filterRequestsByHouseType(searchedRequests, selectedHouseType);
                     searchedRequests.clear();
                     searchedRequests.addAll(filteredByHouseType);
                 }
@@ -345,7 +332,7 @@ public class RequestController implements Initializable {
 
         }
         else if (customerIdSelected || rentOrBuySelected || houseTypeSelected) {
-            ObservableList<RequestTm> allRequests = tableData;
+            ObservableList<RequestTM> allRequests = tableData;
             searchedRequests.addAll(allRequests);
 
             if (customerIdSelected) {
@@ -363,13 +350,13 @@ public class RequestController implements Initializable {
             table.setItems(searchedRequests);
 
         } else {
-            ObservableList<RequestTm> allRequests = tableData;
+            ObservableList<RequestTM> allRequests = tableData;
             table.setItems(allRequests);
         }
     }
 
 
-    private ObservableList<RequestTm> getRequestsByRequestId(String requestId) {
+    private ObservableList<RequestTM> getRequestsByRequestId(String requestId) {
         return FXCollections.observableArrayList(
                 tableData.stream()
                         .filter(request -> request.getRequestId().equalsIgnoreCase(requestId))
@@ -377,7 +364,7 @@ public class RequestController implements Initializable {
         );
     }
 
-    private ObservableList<RequestTm> filterRequestsByCustomerId(ObservableList<RequestTm> requests, String customerId) {
+    private ObservableList<RequestTM> filterRequestsByCustomerId(ObservableList<RequestTM> requests, String customerId) {
         return FXCollections.observableArrayList(
                 requests.stream()
                         .filter(request -> request.getCustomerId().equalsIgnoreCase(customerId))
@@ -385,7 +372,7 @@ public class RequestController implements Initializable {
         );
     }
 
-    private ObservableList<RequestTm> filterRequestsByRentOrBuy(ObservableList<RequestTm> requests, String rentOrBuy) {
+    private ObservableList<RequestTM> filterRequestsByRentOrBuy(ObservableList<RequestTM> requests, String rentOrBuy) {
         return FXCollections.observableArrayList(
                 requests.stream()
                         .filter(request -> request.getRentOrBuy().equalsIgnoreCase(rentOrBuy))
@@ -393,7 +380,7 @@ public class RequestController implements Initializable {
         );
     }
 
-    private ObservableList<RequestTm> filterRequestsByHouseType(ObservableList<RequestTm> requests, String houseType) {
+    private ObservableList<RequestTM> filterRequestsByHouseType(ObservableList<RequestTM> requests, String houseType) {
         return FXCollections.observableArrayList(
                 requests.stream()
                         .filter(request -> request.getHouseType().equalsIgnoreCase(houseType))
@@ -407,37 +394,37 @@ public class RequestController implements Initializable {
     void sortByCmbOnAction(ActionEvent event) {
 
         String sortType = sortByCmb.getSelectionModel().getSelectedItem();
-        ObservableList<RequestTm> requestTms = FXCollections.observableArrayList(tableData);
+        ObservableList<RequestTM> requestTMS = FXCollections.observableArrayList(tableData);
 
         if (sortType == null) {
             return;
         }
 
-        Comparator<RequestTm> comparator = null;
+        Comparator<RequestTM> comparator = null;
 
         switch (sortType) {
             case "Request ID (Ascending)":
-                comparator = Comparator.comparing(RequestTm::getRequestId);
+                comparator = Comparator.comparing(RequestTM::getRequestId);
                 break;
 
             case "Request ID (Descending)":
-                comparator = Comparator.comparing(RequestTm::getRequestId).reversed();
+                comparator = Comparator.comparing(RequestTM::getRequestId).reversed();
                 break;
 
             case "Customer ID (Ascending)":
-                comparator = Comparator.comparing(RequestTm::getCustomerId);
+                comparator = Comparator.comparing(RequestTM::getCustomerId);
                 break;
 
             case "Customer ID (Descending)":
-                comparator = Comparator.comparing(RequestTm::getCustomerId).reversed();
+                comparator = Comparator.comparing(RequestTM::getCustomerId).reversed();
                 break;
 
             case "Lease Turn (Ascending)":
-                comparator = Comparator.comparing(RequestTm::getLeaseTurnDesire);
+                comparator = Comparator.comparing(RequestTM::getLeaseTurnDesire);
                 break;
 
             case "Lease Turn (Descending)":
-                comparator = Comparator.comparing(RequestTm::getLeaseTurnDesire).reversed();
+                comparator = Comparator.comparing(RequestTM::getLeaseTurnDesire).reversed();
                 break;
 
             default:
@@ -445,8 +432,8 @@ public class RequestController implements Initializable {
         }
 
         if (comparator != null) {
-            FXCollections.sort(requestTms, comparator);
-            table.setItems(requestTms);
+            FXCollections.sort(requestTMS, comparator);
+            table.setItems(requestTMS);
         }
     }
 
@@ -460,13 +447,13 @@ public class RequestController implements Initializable {
             return;
         }
 
-        ObservableList<RequestTm> requestTms = FXCollections.observableArrayList();
+        ObservableList<RequestTM> requestTMS = FXCollections.observableArrayList();
 
         for (int i=0; i<value; i++){
-            requestTms.add(tableData.get(i));
+            requestTMS.add(tableData.get(i));
         }
 
-        table.setItems(requestTms);
+        table.setItems(requestTMS);
     }
 
 
@@ -488,7 +475,7 @@ public class RequestController implements Initializable {
 
     public void requestTableSearch() {
 
-        FilteredList<RequestTm> filteredData = new FilteredList<>(tableData, b -> true);
+        FilteredList<RequestTM> filteredData = new FilteredList<>(tableData, b -> true);
 
         searchTxt.textProperty().addListener((observable, oldValue, newValue) -> {
             filteredData.setPredicate(request -> {
@@ -525,7 +512,7 @@ public class RequestController implements Initializable {
             });
         });
 
-        SortedList<RequestTm> sortedData = new SortedList<>(filteredData);
+        SortedList<RequestTM> sortedData = new SortedList<>(filteredData);
         sortedData.comparatorProperty().bind(table.comparatorProperty());
         table.setItems(sortedData);
     }
@@ -537,15 +524,15 @@ public class RequestController implements Initializable {
         ObservableList<String> houseTypes = FXCollections.observableArrayList();
         houseTypes.add("Select");
         try {
-            ObservableList<HouseTypeTm> types = houseTypeModel.loadTableData();
+            ObservableList<HouseTypeDTO> houseTypeDTOS = requestBO.getAllHouseTypes();
 
-            for(HouseTypeTm x : types){
+            for(HouseTypeDTO x : houseTypeDTOS){
                houseTypes.add(x.getHouseType());
             }
 
             houseTypeCmb.setItems(houseTypes);
             houseTypeCmb.getSelectionModel().selectFirst();
-        } catch (SQLException e) {
+        } catch (SQLException | ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
 
@@ -566,7 +553,7 @@ public class RequestController implements Initializable {
         ObservableList<String> ids = FXCollections.observableArrayList();
         ids.add("Select");
 
-        for(RequestTm x : tableData){
+        for(RequestTM x : tableData){
            ids.add(x.getRequestId());
         }
 
@@ -579,7 +566,7 @@ public class RequestController implements Initializable {
     public void setCustomerIdCmbValues(){
 
         try {
-            ObservableList<String> ids = requestModel.getDistinctCustomers();
+            ObservableList<String> ids = requestBO.getDistinctCustomers();
             customerIdCmb.setItems(ids);
             customerIdCmb.getSelectionModel().selectFirst();
         } catch (SQLException e) {
@@ -615,9 +602,9 @@ public class RequestController implements Initializable {
         houseIdColumn.setCellValueFactory(new PropertyValueFactory<>("houseId"));
 
 
-        Callback<TableColumn<RequestTm, String>, TableCell<RequestTm, String>> cellFoctory = (TableColumn<RequestTm, String> param) -> {
+        Callback<TableColumn<RequestTM, String>, TableCell<RequestTM, String>> cellFoctory = (TableColumn<RequestTM, String> param) -> {
 
-            final TableCell<RequestTm, String> cell = new TableCell<RequestTm, String>() {
+            final TableCell<RequestTM, String> cell = new TableCell<RequestTM, String>() {
                 @Override
                 public void updateItem(String item, boolean empty) {
                     super.updateItem(item, empty);
@@ -627,10 +614,10 @@ public class RequestController implements Initializable {
                         setText(null);
 
                     } else {
-                        Image image1 = new Image("C:\\Users\\Laptop World\\IdeaProjects\\test\\src\\main\\resources\\image\\visibility.png");
-                        Image image2 = new Image("C:\\Users\\Laptop World\\IdeaProjects\\test\\src\\main\\resources\\image\\building.png");
-                        Image image3 = new Image("C:\\Users\\Laptop World\\IdeaProjects\\test\\src\\main\\resources\\image\\ethics (1).png");
-                        Image image4 = new Image("C:\\Users\\Laptop World\\IdeaProjects\\test\\src\\main\\resources\\image\\rent.png");
+                        Image image1 = new Image("C:\\Users\\PCWORLD\\IdeaProjects\\Semester_final\\src\\main\\resources\\assets\\image\\visibility.png");
+                        Image image2 = new Image("C:\\Users\\PCWORLD\\IdeaProjects\\Semester_final\\src\\main\\resources\\assets\\image\\building.png");
+                        Image image3 = new Image("C:\\Users\\PCWORLD\\IdeaProjects\\Semester_final\\src\\main\\resources\\assets\\image\\ethics (1).png");
+                        Image image4 = new Image("C:\\Users\\PCWORLD\\IdeaProjects\\Semester_final\\src\\main\\resources\\assets\\image\\rent.png");
                         ImageView viewDetails = new ImageView();
                         viewDetails.setImage(image1);
                         viewDetails.setFitHeight(20);
@@ -660,12 +647,12 @@ public class RequestController implements Initializable {
 
                         viewDetails.setOnMouseClicked((MouseEvent event) -> {
 
-                            RequestTm request = table.getSelectionModel().getSelectedItem();
+                            RequestTM request = table.getSelectionModel().getSelectedItem();
 
                            if(request.getRentOrBuy().equals("Rent")){
 
                                try{
-                                   FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/RentRequestDetails.fxml"));
+                                   FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/RentRequestDetails.fxml"));
                                    Parent root = fxmlLoader.load();
                                    RentRequestDetailsController rentRequestDetailsController = fxmlLoader.getController();
                                    rentRequestDetailsController.setSelectedRequestData(request);
@@ -684,7 +671,7 @@ public class RequestController implements Initializable {
                            else{
 
                                try{
-                                   FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/PurchaseRequestDetails.fxml"));
+                                   FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/PurchaseRequestDetails.fxml"));
                                    Parent root = fxmlLoader.load();
                                    PurchaseRequestDetailsController purchaseRequestDetailsController = fxmlLoader.getController();
                                    purchaseRequestDetailsController.setSelectedRequestData(request);
@@ -705,14 +692,14 @@ public class RequestController implements Initializable {
 
                         searchHouse.setOnMouseClicked((MouseEvent event) -> {
 
-                            RequestTm request = table.getSelectionModel().getSelectedItem();
+                            RequestTM request = table.getSelectionModel().getSelectedItem();
 
                             if(request.getRequestStatus().equals("Rejected") || request.getQualifiedCustomerOrNot().equals("No") || request.getAgreesToAllTermsAndConditions().equals("No") || request.getCustomerRequestStatus().equals("Canceled") || request.getRequestStatus().equals("Closed") || request.getRequestStatus().equals("Completed")){
                                 return;
                             }
 
                             try{
-                                FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/view/RecommendedHouses.fxml"));
+                                FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/RecommendedHouses.fxml"));
                                 Parent root = fxmlLoader.load();
                                 RecommendedHousesController recommendedHousesController = fxmlLoader.getController();
                                 recommendedHousesController.setSelectedRequestData(request);
@@ -731,14 +718,14 @@ public class RequestController implements Initializable {
 
                         process.setOnMouseClicked((MouseEvent event) -> {
 
-                            RequestTm request = table.getSelectionModel().getSelectedItem();
+                            RequestTM request = table.getSelectionModel().getSelectedItem();
 
                             if(request.getRequestStatus().equals("Completed")){
 
                                 if(request.getRentOrBuy().equals("Rent")){
 
                                     try {
-                                        String response = requestModel.addNewTenant(request);
+                                        String response = requestBO.addNewTenant(new RequestDTO().toDTO(request));
                                         loadTable();
                                         notification(response);
 
@@ -752,7 +739,7 @@ public class RequestController implements Initializable {
                                 else{
 
                                     try {
-                                        String response = requestModel.addNewOwner(request);
+                                        String response = requestBO.addNewOwner(new RequestDTO().toDTO(request));
                                         loadTable();
                                         notification(response);
 
@@ -779,7 +766,7 @@ public class RequestController implements Initializable {
 
                         complete.setOnMouseClicked((MouseEvent event) -> {
 
-                            RequestTm request = table.getSelectionModel().getSelectedItem();
+                            RequestTM request = table.getSelectionModel().getSelectedItem();
 
                             if(request.getRequestStatus().equals("Completed")){
                                 return;
@@ -788,8 +775,17 @@ public class RequestController implements Initializable {
                             if(request.getCustomerRequestStatus().equals("Confirmed") && request.getAllDocumentsProvided().equals("Yes") && request.getAgreesToAllTermsAndConditions().equals("Yes") && request.getIsPaymentsCompleted().equals("Yes") && request.getQualifiedCustomerOrNot().equals("Yes") && !request.getHouseId().equals("-")){
 
                                 try {
-                                    String response = requestModel.makeRequestStatusCompleted(request);
-                                    notification(response);
+                                    RequestDTO requestDTO = new RequestDTO();
+                                    requestDTO.setRequestId(request.getRequestId());
+                                    requestDTO.setRequestStatus("Completed");
+                                    boolean response = requestBO.update(requestDTO);
+
+                                    if(response){
+                                      notification("The change request status has been successfully updated to \"Completed\" You can now proceed with further actions.");
+                                    }
+                                    else{
+                                        notification("Failed To Update The Request Status As \"Completed\", Try Again Later");
+                                    }
                                     loadTable();
                                 }
                                 catch (SQLException | ClassNotFoundException e) {
@@ -852,7 +848,13 @@ public class RequestController implements Initializable {
     public void loadTable(){
 
         try {
-            tableData = requestModel.getAllRequests();
+            ObservableList<RequestDTO> requestDTOS = requestBO.getAll();
+            ObservableList<RequestTM> requestTMS = FXCollections.observableArrayList();
+
+            for(RequestDTO x : requestDTOS){
+                requestTMS.add(new RequestTM().toTM(x));
+            }
+            tableData = requestTMS;
             System.out.println("Number of requests: " + tableData.size());
             table.setItems(tableData);
         }
@@ -870,7 +872,7 @@ public class RequestController implements Initializable {
         int count = 0;
         ObservableList<Integer> tableRows = FXCollections.observableArrayList();
 
-        for (RequestTm x : tableData){
+        for (RequestTM x : tableData){
             count++;
             tableRows.add(count);
 
@@ -884,7 +886,13 @@ public class RequestController implements Initializable {
     public void getOnlyClosedRequest() {
 
         try {
-            tableData = requestModel.getOnlyClosedRequests();
+            ObservableList<RequestDTO> requestDTOS = requestBO.getOnlyClosedRequests();
+            ObservableList<RequestTM> requestTMS = FXCollections.observableArrayList();
+
+            for(RequestDTO x : requestDTOS){
+                requestTMS.add(new RequestTM().toTM(x));
+            }
+            tableData = requestTMS;
             table.setItems(tableData);
         }
         catch (SQLException | ClassNotFoundException e) {
